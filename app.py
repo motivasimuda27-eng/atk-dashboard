@@ -114,12 +114,11 @@ def update_stock(item_id):
     Endpoint API untuk menambah atau mengurangi stok
     Method: PUT
     Parameter: item_id (ID item yang akan diupdate)
-    Body: JSON {type: 'in'/'out', quantity, note}
+    Body: JSON {type: 'in'/'out', quantity,}
     """
     data = request.get_json()
     transaction_type = data['type']  # 'in' untuk tambah, 'out' untuk kurang
     quantity = int(data['quantity'])
-    note = data.get('note', '')
     
     conn = get_db()
     cursor = conn.cursor()
@@ -142,8 +141,8 @@ def update_stock(item_id):
     
     # Catat transaksi
     cursor.execute(
-        'INSERT INTO transactions (item_id, type, quantity, date, note) VALUES (?, ?, ?, ?, ?)',
-        (item_id, transaction_type, quantity, datetime.now().isoformat(), note)
+        'INSERT INTO transactions (item_id, type, quantity, date) VALUES (?, ?, ?, ?)',
+        (item_id, transaction_type, quantity, datetime.now().isoformat())
     )
     
     conn.commit()

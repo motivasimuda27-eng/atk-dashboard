@@ -106,16 +106,36 @@ async function addItem(e) {
     }
 }
 
-// Fungsi untuk update stok (tambah/kurang)
-async function updateStock(itemId, type) {
-    // Prompt untuk input jumlah
-    const quantity = prompt(`Masukkan jumlah yang ingin ${type === 'in' ? 'ditambahkan' : 'dikurangi'}:`);
+// Variabel global untuk menyimpan data modal
+let currentStockAction = { itemId: null, type: null };
+let currentDeleteId = null;
+
+// Fungsi untuk update stok (menampilkan modal)
+function updateStock(itemId, type) {
+    currentStockAction = { itemId, type };
+    const title = type === 'in' ? 'Tambah Stok' : 'Kurangi Stok';
+    document.getElementById('stockModalTitle').textContent = title;
+    document.getElementById('stockQuantity').value = '';
+    document.getElementById('stockModal').classList.add('show');
+    document.getElementById('stockQuantity').focus();
+}
+
+// Fungsi untuk menutup modal stock
+function closeStockModal() {
+    document.getElementById('stockModal').classList.remove('show');
+    currentStockAction = { itemId: null, type: null };
+}
+
+// Fungsi untuk confirm stock
+async function confirmStock() {
+    const quantity = document.getElementById('stockQuantity').value;
     
     if (!quantity || quantity <= 0) {
+        alert('Jumlah harus lebih dari 0');
         return;
     }
     
-    const note = prompt('Catatan (opsional):') || '';
+    const { itemId, type } = currentStockAction;
     
     try {
         const response = await fetch(`/api/items/${itemId}/stock`, {
@@ -125,8 +145,7 @@ async function updateStock(itemId, type) {
             },
             body: JSON.stringify({ 
                 type, 
-                quantity: parseInt(quantity),
-                note 
+                quantity: parseInt(quantity)
             })
         });
         
@@ -134,6 +153,7 @@ async function updateStock(itemId, type) {
         
         if (response.ok) {
             alert(`Stok berhasil ${type === 'in' ? 'ditambahkan' : 'dikurangi'}! Stok baru: ${result.new_stock}`);
+            closeStockModal();
             loadItems();
         } else {
             alert(result.error || 'Gagal update stok');
@@ -145,30 +165,64 @@ async function updateStock(itemId, type) {
     }
 }
 
-async function deleteItem(itemId) {
-    if (!confirm('Yakin ingin menghapus item ini?')) {
-        return;
-    }
+// Fungsi untuk menghapus item (menampilkan modal)
+function deleteItem(itemId) {
+    currentDeleteId = itemId;
+    document.getElementById('deleteModal').classList.add('show');
+}
 
+// Fungsi untuk menutup modal delete
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    currentDeleteId = null;
+}
+
+// Fungsi untuk confirm delete
+async function confirmDelete() {
+    const itemId = currentDeleteId;
+    
     try {
         const response = await fetch(`/api/items/${itemId}`, {
             method: 'DELETE',
             headers: {
-                'Content-type': 'application/json'
+                'Content-Type': 'application/json'
             }
         });
-
+        
         if (response.ok) {
             alert('Item berhasil dihapus!');
+            closeDeleteModal();
             loadItems();
         } else {
-            alert('Gagal menghapus item')
+            alert('Gagal menghapus item');
         }
+        
     } catch (error) {
         console.error('Error deleting item:', error);
-        alert('terjadi kesalahan');
+        alert('Terjadi kesalahan');
     }
 }
+
+// Tutup modal saat klik di luar modal
+window.onclick = function(event) {
+    const stockModal = document.getElementById('stockModal');
+    const deleteModal = document.getElementById('deleteModal');
+    
+    if (event.target === stockModal) {
+        closeStockModal();
+    }
+    if (event.target === deleteModal) {
+        closeDeleteModal();
+    }
+}
+
+// Tutup modal dengan tombol Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeStockModal();
+        closeDeleteModal();
+    }
+});
 
 
 // Set bulan default untuk input laporan

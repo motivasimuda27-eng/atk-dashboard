@@ -9,8 +9,16 @@
 <body>
     <div class="container">
         <header>
-            <h1>📊 Dashboard Monitoring ATK</h1>
-            <p>Sistem Manajemen Alat Tulis Kantor</p>
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
+                </div>
+            <div class="header-text">
+                <h1>📊 Dashboard Monitoring ATK </h1>
+                <h2>Timbangan</h2>
+                <p>Sistem Manajemen Alat Tulis Kantor</p>
+            </div>
+            </div>
         </header>
 
         <!-- Navigasi Tab -->
@@ -44,6 +52,40 @@
                 <input type="month" id="reportMonth" value="">
                 <button onclick="loadReport()">Lihat Laporan</button>
                 <div id="reportContent"></div>
+            </div>
+        </div>
+                <!-- Modal untuk Update Stock -->
+        <div id="stockModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="stockModalTitle">Tambah Stok</h2>
+                    <span class="close" onclick="closeStockModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <label>Jumlah:</label>
+                    <input type="number" id="stockQuantity" placeholder="Masukkan jumlah" min="1">
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeStockModal()" class="btn-cancel">Batal</button>
+                    <button onclick="confirmStock()" class="btn-confirm">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal untuk Hapus Item -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content modal-small">
+                <div class="modal-header">
+                    <h2>Hapus Item</h2>
+                    <span class="close" onclick="closeDeleteModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteMessage">Yakin ingin menghapus item ini?</p>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeDeleteModal()" class="btn-cancel">Batal</button>
+                    <button onclick="confirmDelete()" class="btn-delete">Hapus</button>
+                </div>
             </div>
         </div>
     </div>
