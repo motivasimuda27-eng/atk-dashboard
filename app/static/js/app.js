@@ -58,6 +58,9 @@ async function loadItems() {
                     <button class="btn-out" onclick="updateStock(${item.id}, 'out')">
                         ➖ Kurangi Stok
                     </button>
+                    <button class="btn-delete" onclick="deleteItem(${item.id})">
+                        🗑️ Hapus
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -141,6 +144,32 @@ async function updateStock(itemId, type) {
         alert('Terjadi kesalahan');
     }
 }
+
+async function deleteItem(itemId) {
+    if (!confirm('Yakin ingin menghapus item ini?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/items/${itemId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            alert('Item berhasil dihapus!');
+            loadItems();
+        } else {
+            alert('Gagal menghapus item')
+        }
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('terjadi kesalahan');
+    }
+}
+
 
 // Set bulan default untuk input laporan
 function setDefaultMonth() {

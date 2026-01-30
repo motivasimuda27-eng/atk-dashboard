@@ -151,6 +151,28 @@ def update_stock(item_id):
     
     return jsonify({'message': 'Stok berhasil diupdate', 'new_stock': new_stock})
 
+# API untuk menghapus item
+@app.route('/api/items/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    """
+    Endpoint API untuk menghapus item ATK
+    Method: DELETE
+    Parameter: item_id (ID item yang akan dihapus)
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Hapus transaksi terkait item terlebih dahulu
+    cursor.execute('DELETE FROM transactions WHERE item_id = ?', (item_id,))
+    
+    # Hapus item
+    cursor.execute('DELETE FROM items WHERE id = ?', (item_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'message': 'Item berhasil dihapus'})
+
 # API untuk mendapatkan laporan penggunaan per bulan
 @app.route('/api/reports/monthly', methods=['GET'])
 def monthly_report():

@@ -175,6 +175,15 @@ button:hover {
     background: #e53e3e;
 }
 
+.btn-delete {
+    background: #ed8936;
+}
+
+.btn-delete:hover {
+    background: #dd6b20;
+}
+
+
 /* Report Table */
 table {
     width: 100%;
