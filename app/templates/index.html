@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ATK</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Dashboard Monitoring ATK</h1>
+            <p>Sistem Manajemen Alat Tulis Kantor</p>
+        </header>
+
+        <!-- Navigasi Tab -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('inventory')">Inventori</button>
+            <button class="tab-button" onclick="showTab('report')">Laporan Bulanan</button>
+        </div>
+
+        <!-- Tab Inventori -->
+        <div id="inventory" class="tab-content active">
+            <div class="section">
+                <h2>Tambah Item Baru</h2>
+                <form id="addItemForm">
+                    <input type="text" id="itemName" placeholder="Nama ATK (misal: Pulpen Biru)" required>
+                    <input type="number" id="itemStock" placeholder="Stok Awal" value="0" required>
+                    <input type="text" id="itemUnit" placeholder="Satuan (misal: pcs, box)" required>
+                    <button type="submit">Tambah Item</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Daftar ATK</h2>
+                <div id="itemsList"></div>
+            </div>
+        </div>
+
+        <!-- Tab Laporan -->
+        <div id="report" class="tab-content">
+            <div class="section">
+                <h2>Laporan Penggunaan Bulanan</h2>
+                <input type="month" id="reportMonth" value="">
+                <button onclick="loadReport()">Lihat Laporan</button>
+                <div id="reportContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
