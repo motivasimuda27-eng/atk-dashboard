@@ -46,6 +46,7 @@ async function loadItems() {
             <div class="item-card">
                 <div class="item-header">
                     <div>
+                        <div style="color: #999; font-size: 0.85em;">MID: ${item.mid}</div>
                         <div class="item-name">${item.name}</div>
                         <div style="color: #666; font-size: 0.9em;">Satuan: ${item.unit}</div>
                     </div>
@@ -76,8 +77,8 @@ async function addItem(e) {
     e.preventDefault();  // Mencegah form reload halaman
     
     // Ambil data dari form
+    const mid = document.getElementById('itemMID').value;
     const name = document.getElementById('itemName').value;
-    const stock = parseInt(document.getElementById('itemStock').value);
     const unit = document.getElementById('itemUnit').value;
     
     try {
@@ -87,7 +88,7 @@ async function addItem(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ name, stock, unit })
+            body: JSON.stringify({mid, name, unit })
         });
         
         if (response.ok) {
@@ -251,6 +252,7 @@ async function loadReport() {
             <table>
                 <thead>
                     <tr>
+                        <th>MID</th>
                         <th>Nama Item</th>
                         <th>Satuan</th>
                         <th>Total Ditambahkan</th>
@@ -260,6 +262,7 @@ async function loadReport() {
                 <tbody>
                     ${report.map(item => `
                         <tr>
+                            <td>${item.mid}</td>
                             <td>${item.name}</td>
                             <td>${item.unit}</td>
                             <td style="color: #48bb78; font-weight: 600;">+${item.total_added}</td>

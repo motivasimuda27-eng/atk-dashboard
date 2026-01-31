@@ -29,6 +29,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mid TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             stock INTEGER DEFAULT 0,
             unit TEXT NOT NULL
@@ -78,6 +79,7 @@ def get_items():
     for item in items:
         items_list.append({
             'id': item['id'],
+            'mid': item['mid'],
             'name': item['name'],
             'stock': item['stock'],
             'unit': item['unit']
@@ -98,8 +100,8 @@ def add_item():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
-        'INSERT INTO items (name, stock, unit) VALUES (?, ?, ?)',
-        (data['name'], data['stock'], data['unit'])
+        'INSERT INTO items (mid, name, stock, unit) VALUES (?, ?, ?, ?)',
+        (data['mid'], data['name'], 0, data['unit'])
     )
     conn.commit()
     item_id = cursor.lastrowid
@@ -188,6 +190,7 @@ def monthly_report():
     # Query untuk mendapatkan total penggunaan per item di bulan tertentu
     cursor.execute('''
         SELECT 
+            i.mid,
             i.name,
             i.unit,
             SUM(CASE WHEN t.type = 'out' THEN t.quantity ELSE 0 END) as total_used,
@@ -205,6 +208,7 @@ def monthly_report():
     report = []
     for row in results:
         report.append({
+            'mid' : row['mid'],
             'name': row['name'],
             'unit': row['unit'],
             'total_used': row['total_used'] or 0,
