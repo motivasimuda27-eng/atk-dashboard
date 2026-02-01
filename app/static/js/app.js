@@ -255,7 +255,7 @@ async function loadReport() {
                         <th>MID</th>
                         <th>Nama Item</th>
                         <th>Satuan</th>
-                        <th>Total Ditambahkan</th>
+                        <th>Reservasi</th>
                         <th>Total Digunakan</th>
                     </tr>
                 </thead>
