@@ -503,4 +503,25 @@ tr:hover {
     .transactions-table td {
         padding: 8px;
     }
+
+
+}
+
+
+input[type="datetime-local"] {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #f9f9f9;
+    color: #333;
+    transition: border-color 0.3s, box-shadow 0.3;
+    box-shadow: 0 1px 4px rgba(102,126,234,0.05);
+    margin-bottom: 10px;
+}
+
+input[type="datetime-local"]:focus {
+    border-color: #667eea;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.10);
 }
