@@ -29,20 +29,27 @@
 
         <!-- Tab Inventori -->
         <div id="inventory" class="tab-content active">
-            <div class="section">
-                <h2>Tambah Item Baru</h2>
-                <form id="addItemForm">
-                    <input type="text" id="itemMID" placeholder="Masukan MID" required>
-                    <input type="text" id="itemName" placeholder="Nama ATK (misal: Pulpen Biru)" required>
-                    <input type="number" id="itemStock" placeholder="Stock awal" required>
-                    <input type="text" id="itemUnit" placeholder="Satuan (misal: pcs, box)" required>
-                    <button type="submit">Tambah Item</button>
-                </form>
+            <div class="sub-tabs">
+                <button class="sub-tab-button active" onclick="showSubTab('reservasi')">Reservasi</button>
+                <button class="sub-tab-button" onclick="showSubTab('stock')">Stock</button>
             </div>
-
-            <div class="section">
-                <h2>Daftar ATK</h2>
-                <div id="itemsList"></div>
+            <div id="reservasi" class="sub-tab-content active">
+                <div class="section">
+                    <h2>Tambah Item Baru</h2>
+                    <form id="addItemForm">
+                        <input type="text" id="itemMID" placeholder="Masukan MID" required>
+                        <input type="text" id="itemName" placeholder="Nama ATK (misal: Pulpen Biru)" required>
+                        <input type="number" id="itemStock" placeholder="Stock awal" required>
+                        <input type="text" id="itemUnit" placeholder="Satuan (misal: pcs, box)" required>
+                        <button type="submit">Tambah Item</button>
+                    </form>
+                </div>
+            </div>
+            <div id="stock" class="sub-tab-content">
+                <div class="section">
+                    <h2>Daftar ATK</h2>
+                    <div id="itemsList"></div>
+                </div>
             </div>
         </div>
 

@@ -525,3 +525,64 @@ input[type="datetime-local"]:focus {
     background: #fff;
     box-shadow: 0 2px 8px rgba(102,126,234,0.10);
 }
+
+.report-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 24px;
+    padding: 20px 24px;
+    transition: box-shadow 0.2s;
+}
+.report-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.report-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.transactions-list {
+    margin-top: 10px;
+}
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.97em;
+}
+.transactions-table th, .transactions-table td {
+    border-bottom: 1px solid #eee;
+    padding: 6px 8px;
+    text-align: left;
+}
+.transactions-table th {
+    background: #f7f7f7;
+    font-weight: 600;
+}
+
+.sub-tabs {
+    margin-bottom: 16px;
+}
+.sub-tab-button {
+    background: #f7f7f7;
+    border: none;
+    padding: 8px 20px;
+    margin-right: 8px;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    cursor: pointer;
+    color: #333;
+    transition: background 0.2s;
+}
+.sub-tab-button.active {
+    background: #fff;
+    border-bottom: 2px solid #3498db;
+    color: #3498db;
+}
+.sub-tab-content {
+    display: none;
+}
+.sub-tab-content.active {
+    display: block;
+}

@@ -262,7 +262,7 @@ async function loadReport() {
         }
         
         reportContent.innerHTML = report.map(item => `
-            <div class="report-item">
+            <div class="report-card">
                 <div class="report-item-header">
                     <div>
                         <div style="color: #999; font-size: 0.85em;">MID: ${item.mid}</div>
@@ -275,55 +275,64 @@ async function loadReport() {
                             <span class="summary-value">+${item.total_added}</span>
                         </div>
                         <div class="summary-box used">
-                            <span class="summary-tabel">Digunakan</span>
+                            <span class="summary-label">Digunakan</span>
                             <span class="summary-value">-${item.total_used}</span>
                         </div>
                     </div>
                 </div>
-            </div>
+                ${item.transactions.length > 0 ? `
+                    <div class="transactions-list">
+                        <table class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal & Waktu</th>
+                                    <th>Tipe</th>
+                                    <th>Jumlah</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${item.transactions.map(trans => {
+                                    const date = new Date(trans.date);
+                                    const formattedDate = date.toLocaleString('id-ID', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit'
+                                    });
+                                    const typeLabel = trans.type === 'in' ? 'Reservasi' : 'Digunakan';
+                                    const typeStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
+                                    const quantityStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
+                                    const quantitySign = trans.type === 'in' ? '+' : '-';
 
-            ${item.transactions.length > 0 ? `
-                <div class="transactions-list">
-                    <table class="transactions-table">
-                        <thead>
-                            <tr>
-                                <th>Tanggal & Waktu</th>
-                                <th>Tipe</th
-                                <th>Jumlah</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${item.transactions.map(trans => {
-                                const date = new Date(trans.date);
-                                const formattedDate = date.toLocaleString('id-ID', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit'                               
-                                });
-                                const typeLabel = trans.type === 'in' ? 'Reservasi' : 'Digunakan';
-                                const typeStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
-                                const quantityStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
-                                const quantitySign = trans.type === 'in' ? '+' : '-';
-
-                                return `
-                                    <tr>
-                                        <td>${formattedDate}</td>
-                                        <td style="${typeStyle}">${typeLabel}</td>
-                                        <td style="${quantityStyle}">${quantitySign}${trans.quantity}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            ` : ' <div style="color: #999; padding: 10px;">Tidak ada transaksi di bulan ini</div>'}
+                                    return `
+                                        <tr>
+                                            <td>${formattedDate}</td>
+                                            <td style="${typeStyle}">${typeLabel}</td>
+                                            <td style="${quantityStyle}">${quantitySign}${trans.quantity}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : '<div style="color: #999; padding: 10px;">Tidak ada transaksi di bulan ini</div>'}
             </div>
         `).join('');
     } catch (error) {
         console.error('Error loading report:', error);
         alert('Gagal memuat laporan');
     }
+}
+
+//sub menu
+function showSubTab(subTabName) {
+    // Sembunyikan semua sub-tab
+    document.querySelectorAll('.sub-tab-content').forEach(tab => tab.classList.remove('active'));
+    // Nonaktifkan semua tombol sub-tab
+    document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
+    // Tampilkan sub-tab yang dipilih
+    document.getElementById(subTabName).classList.add('active');
+    event.target.classList.add('active');
 }
