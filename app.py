@@ -101,7 +101,7 @@ def add_item():
     cursor = conn.cursor()
     cursor.execute(
         'INSERT INTO items (mid, name, stock, unit) VALUES (?, ?, ?, ?)',
-        (data['mid'], data['name'], 0, data['unit'])
+        (data['mid'], data['name'], data['stock'], data['unit'])
     )
     conn.commit()
     item_id = cursor.lastrowid

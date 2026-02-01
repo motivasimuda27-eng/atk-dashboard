@@ -79,6 +79,7 @@ async function addItem(e) {
     // Ambil data dari form
     const mid = document.getElementById('itemMID').value;
     const name = document.getElementById('itemName').value;
+    const stock = parseInt(document.getElementById('itemStock').value);
     const unit = document.getElementById('itemUnit').value;
     
     try {
@@ -88,7 +89,7 @@ async function addItem(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({mid, name, unit })
+            body: JSON.stringify({mid, name, stock, unit })
         });
         
         if (response.ok) {
