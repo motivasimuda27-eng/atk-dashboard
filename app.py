@@ -116,11 +116,12 @@ def update_stock(item_id):
     Endpoint API untuk menambah atau mengurangi stok
     Method: PUT
     Parameter: item_id (ID item yang akan diupdate)
-    Body: JSON {type: 'in'/'out', quantity,}
+    Body: JSON {type: 'in'/'out', quantity, date}
     """
     data = request.get_json()
     transaction_type = data['type']  # 'in' untuk tambah, 'out' untuk kurang
     quantity = int(data['quantity'])
+    transaction_date = data.get('date', datetime.now().isoformat())
     
     conn = get_db()
     cursor = conn.cursor()
@@ -144,7 +145,7 @@ def update_stock(item_id):
     # Catat transaksi
     cursor.execute(
         'INSERT INTO transactions (item_id, type, quantity, date) VALUES (?, ?, ?, ?)',
-        (item_id, transaction_type, quantity, datetime.now().isoformat())
+        (item_id, transaction_type, quantity, transaction_date)
     )
     
     conn.commit()
@@ -190,30 +191,55 @@ def monthly_report():
     # Query untuk mendapatkan total penggunaan per item di bulan tertentu
     cursor.execute('''
         SELECT 
+            i.id,
             i.mid,
             i.name,
             i.unit,
-            SUM(CASE WHEN t.type = 'out' THEN t.quantity ELSE 0 END) as total_used,
-            SUM(CASE WHEN t.type = 'in' THEN t.quantity ELSE 0 END) as total_added
+            t.id as transaction_id,
+            t.type,
+            t.quantity,
+            t.date
         FROM items i
         LEFT JOIN transactions t ON i.id = t.item_id
-        WHERE t.date LIKE ? || '%' OR t.date IS NULL
-        GROUP BY i.id, i.name, i.unit
-        ORDER BY i.name
-    ''', (month,))
+        WHERE t.date LIKE ? || '%' OR (t.date IS NULL AND i.id NOT IN (SELECT DISTINCT item_id FROM transactions WHERE date LIKE ? || '%'))
+        ORDER BY i.name, t.date DESC
+    ''', (month, month))
     
     results = cursor.fetchall()
     conn.close()
-    
-    report = []
+
+    #kelompokan data per item
+    report_dict = {}
     for row in results:
-        report.append({
-            'mid' : row['mid'],
-            'name': row['name'],
-            'unit': row['unit'],
-            'total_used': row['total_used'] or 0,
-            'total_added': row['total_added'] or 0
-        })
+        item_key = row['id']
+
+        if item_key not in report_dict:
+            report_dict[item_key] = {
+                'mid': row['mid'],
+                'name': row['name'],
+                'unit': row['unit'],
+                'total_used': 0,
+                'total_added': 0,
+                'transactions': []
+            }
+
+        #jika ada transaksi
+        if row['transaction_id']:
+            transaction = {
+                'type': row['type'],
+                'quantity': row['quantity'],
+                'date': row['date']
+            }
+            report_dict[item_key]['transactions'].append(transaction)
+
+            #hitung total
+            if row['type'] == 'out':
+                report_dict[item_key]['total_used'] += row['quantity']
+            elif row['type'] == 'in':
+                report_dict[item_key]['total_added'] += row['quantity']
+    
+    #konversi ke list
+    report = list(report_dict.values())
     
     return jsonify(report)
 

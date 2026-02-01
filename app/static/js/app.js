@@ -116,6 +116,9 @@ function updateStock(itemId, type) {
     currentStockAction = { itemId, type };
     const title = type === 'in' ? 'Tambah Stok' : 'Kurangi Stok';
     document.getElementById('stockModalTitle').textContent = title;
+    const today = new Date();
+    const isoString = today.toISOString().slice(0, 16);
+    document.getElementById('stockDate').value = isoString;
     document.getElementById('stockQuantity').value = '';
     document.getElementById('stockModal').classList.add('show');
     document.getElementById('stockQuantity').focus();
@@ -130,13 +133,21 @@ function closeStockModal() {
 // Fungsi untuk confirm stock
 async function confirmStock() {
     const quantity = document.getElementById('stockQuantity').value;
+    const stockDate = document.getElementById('stockDate').value;
     
     if (!quantity || quantity <= 0) {
         alert('Jumlah harus lebih dari 0');
         return;
     }
+
+    if (!stockDate) {
+        alert('Tanggal harus diisi');
+        return;
+    }
     
     const { itemId, type } = currentStockAction;
+    const dateObj = new Date(stockDate);
+    const isoDate = dateObj.toISOString();
     
     try {
         const response = await fetch(`/api/items/${itemId}/stock`, {
@@ -146,7 +157,8 @@ async function confirmStock() {
             },
             body: JSON.stringify({ 
                 type, 
-                quantity: parseInt(quantity)
+                quantity: parseInt(quantity),
+                date: isoDate
             })
         });
         
@@ -248,31 +260,67 @@ async function loadReport() {
             return;
         }
         
-        reportContent.innerHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>MID</th>
-                        <th>Nama Item</th>
-                        <th>Satuan</th>
-                        <th>Reservasi</th>
-                        <th>Total Digunakan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${report.map(item => `
-                        <tr>
-                            <td>${item.mid}</td>
-                            <td>${item.name}</td>
-                            <td>${item.unit}</td>
-                            <td style="color: #48bb78; font-weight: 600;">+${item.total_added}</td>
-                            <td style="color: #f56565; font-weight: 600;">-${item.total_used}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-        
+        reportContent.innerHTML = report.map(item => `
+            <div class="report-item">
+                <div class="report-item-header">
+                    <div>
+                        <div style="color: #999; font-size: 0.85em;">MID: ${item.mid}</div>
+                        <div style="font-size: 1.2em; font-weight: 600; color: #333;">${item.name}</div>
+                        <div style="color: #666; font-size: 0.9em;">Satuan: ${item.unit}</div>
+                    </div>
+                    <div class="report-sumary">
+                        <div class="summary-box added">
+                            <span class="summary-label">Ditambahkan</span>
+                            <span class="summary-value">+${item.total_added}</span>
+                        </div>
+                        <div class="summary-box used">
+                            <span class="summary-tabel">Digunakan</span>
+                            <span class="summary-value">-${item.total_used}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            ${item.transactions.length > 0 ? `
+                <div class="transactions-list">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal & Waktu</th>
+                                <th>Tipe</th
+                                <th>Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${item.transactions.map(trans => {
+                                const date = new Date(trans.date);
+                                const formattedDate = date.toLocaleString('id-ID', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit'                               
+                                });
+                                const typeLabel = trans.type === 'in' ? 'Reservasi' : 'Digunakan';
+                                const typeStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
+                                const quantityStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
+                                const quantitySign = trans.type === 'in' ? '+' : '-';
+
+                                return `
+                                    <tr>
+                                        <td>${formattedDate}</td>
+                                        <td style="${typeStyle}">${typeLabel}</td>
+                                        <td style="${quantityStyle}">${quantitySign}${trans.quantity}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            ` : ' <div style="color: #999; padding: 10px;">Tidak ada transaksi di bulan ini</div>'}
+            </div>
+        `).join('');
     } catch (error) {
         console.error('Error loading report:', error);
         alert('Gagal memuat laporan');
