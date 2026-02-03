@@ -32,7 +32,8 @@ def init_db():
             mid TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             stock INTEGER DEFAULT 0,
-            unit TEXT NOT NULL
+            unit TEXT NOT NULL,
+            storage_location TEXT DEFAULT ''
         )
     ''')
     
@@ -82,7 +83,8 @@ def get_items():
             'mid': item['mid'],
             'name': item['name'],
             'stock': item['stock'],
-            'unit': item['unit']
+            'unit': item['unit'],
+            'storage_location': item['storage_location']
         })
     
     return jsonify(items_list)
@@ -100,8 +102,8 @@ def add_item():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
-        'INSERT INTO items (mid, name, stock, unit) VALUES (?, ?, ?, ?)',
-        (data['mid'], data['name'], data['stock'], data['unit'])
+        'INSERT INTO items (mid, name, stock, unit, storage_location) VALUES (?, ?, ?, ?, ?)',
+        (data['mid'], data['name'], data['stock'], data['unit'], data.get('storage_location', ''))
     )
     conn.commit()
     item_id = cursor.lastrowid

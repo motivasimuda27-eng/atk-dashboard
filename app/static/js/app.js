@@ -49,6 +49,7 @@ async function loadItems() {
                         <div style="color: #999; font-size: 0.85em;">MID: ${item.mid}</div>
                         <div class="item-name">${item.name}</div>
                         <div style="color: #666; font-size: 0.9em;">Satuan: ${item.unit}</div>
+                        <div style="color: #666; font-size: 0.9em;">Lokasi: ${item.storage_location || 'Belum ditentukan'}</div>
                     </div>
                     <div class="item-stock">${item.stock} ${item.unit}</div>
                 </div>
@@ -81,6 +82,7 @@ async function addItem(e) {
     const name = document.getElementById('itemName').value;
     const stock = parseInt(document.getElementById('itemStock').value);
     const unit = document.getElementById('itemUnit').value;
+    const storage_location = document.getElementById('itemStorage').value;
     
     try {
         // Kirim data ke server
@@ -89,7 +91,7 @@ async function addItem(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({mid, name, stock, unit })
+            body: JSON.stringify({mid, name, stock, unit, storage_location})
         });
         
         if (response.ok) {
