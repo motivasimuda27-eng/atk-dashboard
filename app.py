@@ -176,6 +176,7 @@ def delete_item(item_id):
     return jsonify({'message': 'Item berhasil dihapus'})
 
 # API untuk mendapatkan laporan penggunaan per bulan
+# API untuk mendapatkan laporan penggunaan per bulan
 @app.route('/api/reports/monthly', methods=['GET'])
 def monthly_report():
     """
@@ -185,10 +186,16 @@ def monthly_report():
     """
     month = request.args.get('month', datetime.now().strftime('%Y-%m'))
     
+    # Validasi format month
+    try:
+        datetime.strptime(month, '%Y-%m')
+    except ValueError:
+        return jsonify({'error': 'Format bulan tidak valid'}), 400
+    
     conn = get_db()
     cursor = conn.cursor()
     
-    # Query untuk mendapatkan total penggunaan per item di bulan tertentu
+    # Query untuk mendapatkan semua item dan transaksi mereka di bulan tertentu
     cursor.execute('''
         SELECT 
             i.id,
@@ -200,15 +207,15 @@ def monthly_report():
             t.quantity,
             t.date
         FROM items i
-        LEFT JOIN transactions t ON i.id = t.item_id
-        WHERE t.date LIKE ? || '%' OR (t.date IS NULL AND i.id NOT IN (SELECT DISTINCT item_id FROM transactions WHERE date LIKE ? || '%'))
+        LEFT JOIN transactions t ON i.id = t.item_id 
+            AND t.date LIKE ? || '%'
         ORDER BY i.name, t.date DESC
-    ''', (month, month))
+    ''', (month,))
     
     results = cursor.fetchall()
     conn.close()
 
-    #kelompokan data per item
+    # Kelompokkan data per item
     report_dict = {}
     for row in results:
         item_key = row['id']
@@ -223,7 +230,7 @@ def monthly_report():
                 'transactions': []
             }
 
-        #jika ada transaksi
+        # Jika ada transaksi
         if row['transaction_id']:
             transaction = {
                 'type': row['type'],
@@ -232,13 +239,13 @@ def monthly_report():
             }
             report_dict[item_key]['transactions'].append(transaction)
 
-            #hitung total
+            # Hitung total
             if row['type'] == 'out':
                 report_dict[item_key]['total_used'] += row['quantity']
             elif row['type'] == 'in':
                 report_dict[item_key]['total_added'] += row['quantity']
     
-    #konversi ke list
+    # Konversi ke list
     report = list(report_dict.values())
     
     return jsonify(report)

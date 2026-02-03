@@ -118,7 +118,7 @@ function updateStock(itemId, type) {
     const title = type === 'in' ? 'Tambah Stok' : 'Kurangi Stok';
     document.getElementById('stockModalTitle').textContent = title;
     const today = new Date();
-    const isoString = today.toISOString().slice(0, 16);
+    const isoString = today.toISOString().slice(0, 10);
     document.getElementById('stockDate').value = isoString;
     document.getElementById('stockQuantity').value = '';
     document.getElementById('stockModal').classList.add('show');
@@ -269,7 +269,7 @@ async function loadReport() {
                         <div style="font-size: 1.2em; font-weight: 600; color: #333;">${item.name}</div>
                         <div style="color: #666; font-size: 0.9em;">Satuan: ${item.unit}</div>
                     </div>
-                    <div class="report-sumary">
+                    <div class="report-summary">
                         <div class="summary-box added">
                             <span class="summary-label">Ditambahkan</span>
                             <span class="summary-value">+${item.total_added}</span>
@@ -285,7 +285,7 @@ async function loadReport() {
                         <table class="transactions-table">
                             <thead>
                                 <tr>
-                                    <th>Tanggal & Waktu</th>
+                                    <th>Tanggal</th>
                                     <th>Tipe</th>
                                     <th>Jumlah</th>
                                 </tr>
@@ -293,13 +293,10 @@ async function loadReport() {
                             <tbody>
                                 ${item.transactions.map(trans => {
                                     const date = new Date(trans.date);
-                                    const formattedDate = date.toLocaleString('id-ID', {
+                                    const formattedDate = date.toLocaleDateString('id-ID', {
                                         year: 'numeric',
                                         month: '2-digit',
-                                        day: '2-digit',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        second: '2-digit'
+                                        day: '2-digit'
                                     });
                                     const typeLabel = trans.type === 'in' ? 'Reservasi' : 'Digunakan';
                                     const typeStyle = trans.type === 'in' ? 'color: #48bb78; font-weight: 600;' : 'color: #f56565; font-weight: 600;';
