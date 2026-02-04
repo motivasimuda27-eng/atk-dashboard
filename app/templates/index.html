@@ -45,6 +45,29 @@
                         <button type="submit">Tambah Item</button>
                     </form>
                 </div>
+
+                <div class="section">
+                    <h2>Reservasi Stock Massal</h2>
+                    <div class="bulk-reservation-form">
+                        <div class="bulk-header">
+                            <label for="bulkReservationDate" style="font-weight: 600; color: #333;">Tanggal Reservasi:</label>
+                            <input type="date" id="bulkReservationDate" required style="margin-bottom: 15px;">
+                        </div>
+                        
+                        <div id="reservationItemsContainer">
+                            <!-- Rows will be added dynamically by JavaScript -->
+                        </div>
+                        
+                        <div class="bulk-actions">
+                            <button type="button" onclick="addReservationRow()" class="btn-add-row">
+                                ➕ Tambah Baris
+                            </button>
+                            <button type="button" onclick="submitBulkReservation()" class="btn-submit-bulk">
+                                💾 Simpan Semua Reservasi
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="stock" class="sub-tab-content">
                 <div class="section">

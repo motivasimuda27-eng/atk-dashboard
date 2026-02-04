@@ -177,7 +177,77 @@ def delete_item(item_id):
     
     return jsonify({'message': 'Item berhasil dihapus'})
 
-# API untuk mendapatkan laporan penggunaan per bulan
+#API untuk bulk stock reservation
+@app.route('/api/items/bulk_reservation', methods=['POST'])
+def bulk_reservation():
+    """
+    Endpoint API untuk menambahkan stock beberapa item sekaligus
+    Method: POST
+    Body: JSON {items: [{item_id, quantity}], date}
+    """
+    data = request.get_json()
+    items = data.get('items', [])
+    transaction_date = data.get('date', datetime.now().isoformat())
+
+    if not items:
+        return jsonify({'error': 'Tidak ada item yang dipilih'}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+
+    results = []
+    errors = []
+
+    for item_data in items:
+        item_id = item_data['item_id']
+        quantity = int(item_data['quantity'])
+
+        if quantity <= 0:
+            continue
+
+        try:
+            #Ambil stock saat ini
+            cursor.execute('SELECT stock, name FROM items WHERE id = ?', (item_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                errors.append(f"Item ID {item_id} tidak ditemukan")
+                continue
+
+            current_stock = row['stock']
+            item_name = row['name']
+            new_stock = current_stock + quantity
+
+            #update stock
+            cursor.execute('UPDATE items SET stock = ? WHERE id = ?', (new_stock, item_id))
+
+            #catat transaksi
+            cursor.execute(
+                'INSERT INTO transactions (item_id, type, quantity, date) VALUES (?, ?, ?, ?)',
+                (item_id, 'in', quantity, transaction_date)
+            )
+
+            results.append({
+                'item_id': item_id,
+                'name': item_name,
+                'quantity': quantity,
+                'new_stock': new_stock
+            })
+        
+        except Exception as e:
+            errors.append(f"Error pada item ID {item_id}: {str(e)}")
+    
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        'message': f'Berhasil menambahkan stock {len(results)} item',
+        'results': results,
+        'errors': errors
+    })
+
+
+
 # API untuk mendapatkan laporan penggunaan per bulan
 @app.route('/api/reports/monthly', methods=['GET'])
 def monthly_report():
@@ -204,6 +274,7 @@ def monthly_report():
             i.mid,
             i.name,
             i.unit,
+            i.storage_location,
             t.id as transaction_id,
             t.type,
             t.quantity,
@@ -227,6 +298,7 @@ def monthly_report():
                 'mid': row['mid'],
                 'name': row['name'],
                 'unit': row['unit'],
+                'storage_location': row['storage_location'],
                 'total_used': 0,
                 'total_added': 0,
                 'transactions': []

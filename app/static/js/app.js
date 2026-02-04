@@ -270,6 +270,7 @@ async function loadReport() {
                         <div style="color: #999; font-size: 0.85em;">MID: ${item.mid}</div>
                         <div style="font-size: 1.2em; font-weight: 600; color: #333;">${item.name}</div>
                         <div style="color: #666; font-size: 0.9em;">Satuan: ${item.unit}</div>
+                        <div style="color: #666; font-size: 0.9em;">Lokasi: ${item.storage_location || 'Belum ditentukan'}</div>
                     </div>
                     <div class="report-summary">
                         <div class="summary-box added">
@@ -335,3 +336,194 @@ function showSubTab(subTabName) {
     document.getElementById(subTabName).classList.add('active');
     event.target.classList.add('active');
 }
+
+// ===== BULK RESERVATION FUNCTIONS =====
+
+// Array untuk menyimpan daftar item ATK (untuk dropdown)
+let availableItems = [];
+
+// Load items saat halaman dimuat dan populate dropdown
+async function loadAvailableItems() {
+    try {
+        const response = await fetch('/api/items');
+        availableItems = await response.json();
+        
+        // Tambah baris pertama jika belum ada
+        if (document.getElementById('reservationItemsContainer').children.length === 0) {
+            addReservationRow();
+        }
+    } catch (error) {
+        console.error('Error loading items:', error);
+    }
+}
+
+// Fungsi untuk menambah baris reservasi baru
+function addReservationRow() {
+    const container = document.getElementById('reservationItemsContainer');
+    const rowId = 'row-' + Date.now();
+    
+    const row = document.createElement('div');
+    row.className = 'reservation-row';
+    row.id = rowId;
+    
+    row.innerHTML = `
+        <div class="row-number">${container.children.length + 1}</div>
+        <select class="item-select" required>
+            <option value="">-- Pilih Item --</option>
+            ${availableItems.map(item => `
+                <option value="${item.id}" data-unit="${item.unit}">
+                    ${item.mid} - ${item.name} (Stock: ${item.stock} ${item.unit})
+                </option>
+            `).join('')}
+        </select>
+        <input type="number" class="quantity-input" placeholder="Jumlah" min="1" required>
+        <span class="unit-display">-</span>
+        <button type="button" onclick="removeReservationRow('${rowId}')" class="btn-remove-row">
+            🗑️
+        </button>
+    `;
+    
+    container.appendChild(row);
+    
+    // Event listener untuk update unit display saat item dipilih
+    const select = row.querySelector('.item-select');
+    const unitDisplay = row.querySelector('.unit-display');
+    
+    select.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const unit = selectedOption.getAttribute('data-unit') || '-';
+        unitDisplay.textContent = unit;
+    });
+    
+    updateRowNumbers();
+}
+
+// Fungsi untuk menghapus baris reservasi
+function removeReservationRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.remove();
+        updateRowNumbers();
+    }
+}
+
+// Update nomor urut baris
+function updateRowNumbers() {
+    const rows = document.querySelectorAll('.reservation-row');
+    rows.forEach((row, index) => {
+        const numberEl = row.querySelector('.row-number');
+        if (numberEl) {
+            numberEl.textContent = index + 1;
+        }
+    });
+}
+
+// Submit bulk reservation
+async function submitBulkReservation() {
+    const date = document.getElementById('bulkReservationDate').value;
+    
+    if (!date) {
+        alert('Tanggal harus diisi!');
+        return;
+    }
+    
+    const rows = document.querySelectorAll('.reservation-row');
+    
+    if (rows.length === 0) {
+        alert('Belum ada item yang ditambahkan!');
+        return;
+    }
+    
+    const items = [];
+    let hasError = false;
+    
+    rows.forEach((row, index) => {
+        const select = row.querySelector('.item-select');
+        const quantityInput = row.querySelector('.quantity-input');
+        
+        const itemId = select.value;
+        const quantity = parseInt(quantityInput.value);
+        
+        if (!itemId) {
+            alert(`Baris ${index + 1}: Pilih item terlebih dahulu`);
+            hasError = true;
+            return;
+        }
+        
+        if (!quantity || quantity <= 0) {
+            alert(`Baris ${index + 1}: Jumlah harus lebih dari 0`);
+            hasError = true;
+            return;
+        }
+        
+        items.push({
+            item_id: parseInt(itemId),
+            quantity: quantity
+        });
+    });
+    
+    if (hasError) return;
+    
+    // Convert date to ISO format
+    const dateObj = new Date(date);
+    const isoDate = dateObj.toISOString();
+    
+    try {
+        const response = await fetch('/api/items/bulk_reservation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                items: items,
+                date: isoDate
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            let message = result.message + '\n\n';
+            
+            if (result.results.length > 0) {
+                message += 'Detail:\n';
+                result.results.forEach(r => {
+                    message += `✅ ${r.name}: +${r.quantity} (Stock baru: ${r.new_stock})\n`;
+                });
+            }
+            
+            if (result.errors.length > 0) {
+                message += '\n⚠️ Error:\n' + result.errors.join('\n');
+            }
+            
+            alert(message);
+            
+            // Clear form
+            document.getElementById('reservationItemsContainer').innerHTML = '';
+            document.getElementById('bulkReservationDate').value = '';
+            
+            // Reload items dan tambah baris baru
+            await loadAvailableItems();
+            loadItems(); // Refresh stock list
+        } else {
+            alert('Error: ' + (result.error || 'Gagal menyimpan reservasi'));
+        }
+        
+    } catch (error) {
+        console.error('Error submitting bulk reservation:', error);
+        alert('Terjadi kesalahan saat menyimpan');
+    }
+}
+
+// Panggil saat halaman dimuat
+document.addEventListener('DOMContentLoaded', function() {
+    loadItems();
+    setDefaultMonth();
+    loadAvailableItems(); // Load items untuk bulk reservation
+    
+    // Set default date untuk bulk reservation
+    const today = new Date();
+    document.getElementById('bulkReservationDate').value = today.toISOString().slice(0, 10);
+    
+    document.getElementById('addItemForm').addEventListener('submit', addItem);
+});
