@@ -104,6 +104,8 @@ async function addItem(e) {
             document.getElementById('addItemForm').reset();
             // Reload daftar item
             loadItems();
+            loadAvailableItems();
+            updateAllDropdowns();
         } else {
             alert('Gagal menambahkan item');
         }
@@ -423,10 +425,14 @@ function showSubTab(subTabName) {
 let availableItems = [];
 
 // Load items saat halaman dimuat dan populate dropdown
+// Load items saat halaman dimuat dan populate dropdown
 async function loadAvailableItems() {
     try {
         const response = await fetch('/api/items');
         availableItems = await response.json();
+        
+        // Update semua dropdown yang sudah ada
+        updateAllDropdowns();
         
         // Tambah baris pertama jika belum ada
         if (document.getElementById('reservationItemsContainer').children.length === 0) {
@@ -437,6 +443,29 @@ async function loadAvailableItems() {
     }
 }
 
+// Fungsi untuk update semua dropdown yang sudah ada
+function updateAllDropdowns() {
+    const selects = document.querySelectorAll('.item-select');
+    
+    selects.forEach(select => {
+        const currentValue = select.value; // Simpan nilai yang dipilih
+        
+        // Update opsi
+        select.innerHTML = `
+            <option value="">-- Pilih Item --</option>
+            ${availableItems.map(item => `
+                <option value="${item.id}" data-unit="${item.unit}">
+                    ${item.mid} - ${item.name} (Stock: ${item.stock} ${item.unit})
+                </option>
+            `).join('')}
+        `;
+        
+        // Kembalikan nilai yang dipilih (jika masih ada)
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    });
+}
 // Fungsi untuk menambah baris reservasi baru
 function addReservationRow() {
     const container = document.getElementById('reservationItemsContainer');
