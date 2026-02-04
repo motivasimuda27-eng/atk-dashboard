@@ -1,3 +1,70 @@
+// ===== TOAST NOTIFICATION SYSTEM =====
+
+function showToast(message, type = 'info', duration = 10000) {
+    // Buat container jika belum ada
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    // Icon berdasarkan type
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    // Titles berdasarkan type
+    const titles = {
+        success: 'Berhasil',
+        error: 'Error',
+        warning: 'Peringatan',
+        info: 'Informasi'
+    };
+    
+    // Buat toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-content">
+            <div class="toast-title">${titles[type] || titles.info}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="closeToast(this)">×</button>
+        <div class="toast-progress"></div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove setelah duration
+    setTimeout(() => {
+        removeToast(toast);
+    }, duration);
+}
+
+function closeToast(button) {
+    const toast = button.closest('.toast');
+    removeToast(toast);
+}
+
+function removeToast(toast) {
+    toast.classList.add('removing');
+    setTimeout(() => {
+        toast.remove();
+        
+        // Hapus container jika kosong
+        const container = document.querySelector('.toast-container');
+        if (container && container.children.length === 0) {
+            container.remove();
+        }
+    }, 300);
+}
+
+
 // Fungsi yang dijalankan saat halaman selesai dimuat
 document.addEventListener('DOMContentLoaded', function() {
     loadItems();  // Muat daftar ATK
@@ -73,7 +140,7 @@ async function loadItems() {
         
     } catch (error) {
         console.error('Error loading items:', error);
-        alert('Gagal memuat data ATK');
+        showToast('Gagal memuat daftar item', 'error');
     }
 }
 
@@ -99,7 +166,7 @@ async function addItem(e) {
         });
         
         if (response.ok) {
-            alert('Item berhasil ditambahkan!');
+            showToast('Item berhasil ditambahkan!', 'success');
             // Reset form
             document.getElementById('addItemForm').reset();
             // Reload daftar item
@@ -107,12 +174,12 @@ async function addItem(e) {
             loadAvailableItems();
             updateAllDropdowns();
         } else {
-            alert('Gagal menambahkan item');
+            showToast('Gagal menambahkan item', 'error');
         }
         
     } catch (error) {
         console.error('Error adding item:', error);
-        alert('Terjadi kesalahan');
+        showToast('Terjadi kesalahan', 'error');
     }
 }
 
@@ -145,12 +212,12 @@ async function confirmStock() {
     const stockDate = document.getElementById('stockDate').value;
     
     if (!quantity || quantity <= 0) {
-        alert('Jumlah harus lebih dari 0');
+        showToast('Jumlah harus lebih dari 0', 'warning');
         return;
     }
 
     if (!stockDate) {
-        alert('Tanggal harus diisi');
+        showToast('Tanggal harus diisi', 'warning');
         return;
     }
     
@@ -174,16 +241,16 @@ async function confirmStock() {
         const result = await response.json();
         
         if (response.ok) {
-            alert(`Stok berhasil ${type === 'in' ? 'ditambahkan' : 'dikurangi'}! Stok baru: ${result.new_stock}`);
+            showToast(`Stok berhasil ${type === 'in' ? 'ditambahkan' : 'dikurangi'}! Stok baru: ${result.new_stock}`, 'success');
             closeStockModal();
             loadItems();
         } else {
-            alert(result.error || 'Gagal update stok');
+            showToast(result.error || 'Gagal update stok', 'error');
         }
         
     } catch (error) {
         console.error('Error updating stock:', error);
-        alert('Terjadi kesalahan');
+        showToast('Terjadi kesalahan', 'error');
     }
 }
 
@@ -212,16 +279,16 @@ async function confirmDelete() {
         });
         
         if (response.ok) {
-            alert('Item berhasil dihapus!');
+            showToast('Item berhasil dihapus!', 'success');
             closeDeleteModal();
             loadItems();
         } else {
-            alert('Gagal menghapus item');
+            showToast('Gagal menghapus item', 'error');
         }
         
     } catch (error) {
         console.error('Error deleting item:', error);
-        alert('Terjadi kesalahan');
+        showToast('Terjadi kesalahan', 'error');
     }
 }
 
@@ -253,12 +320,12 @@ async function confirmEdit() {
 
     //validasi
     if (!mid || !name || !unit) {
-        alert('MID, Nama, dan Satuan wajib diisi!');
+        showToast('MID, Nama, dan Satuan wajib diisi!', 'warning');
         return;
     }
     
     if (stock < 0) {
-        alert('Stock tidak boleh negatif!');
+        showToast('Stock tidak boleh negatif!', 'warning');
         return;
     }
     
@@ -274,17 +341,17 @@ async function confirmEdit() {
         const result = await response.json();
         
         if (response.ok) {
-            alert('Item berhasil diperbarui!');
+            showToast('Item berhasil diperbarui!', 'success');
             closeEditModal();
             loadItems();
             loadAvailableItems(); // Refresh dropdown bulk reservation
         } else {
-            alert(result.error || 'Gagal memperbarui item');
+            showToast(result.error || 'Gagal memperbarui item', 'error');
         }
         
     } catch (error) {
         console.error('Error editing item:', error);
-        alert('Terjadi kesalahan');
+        showToast('Terjadi kesalahan', 'error');
     }
 }
 
@@ -404,7 +471,7 @@ async function loadReport() {
         `).join('');
     } catch (error) {
         console.error('Error loading report:', error);
-        alert('Gagal memuat laporan');
+        showToast('Gagal memuat laporan', 'error');
     }
 }
 
@@ -536,14 +603,14 @@ function submitBulkReservation() {
     const date = document.getElementById('bulkReservationDate').value;
     
     if (!date) {
-        alert('Tanggal harus diisi!');
+        showToast('Tanggal harus diisi', 'warning');
         return;
     }
     
     const rows = document.querySelectorAll('.reservation-row');
     
     if (rows.length === 0) {
-        alert('Belum ada item yang ditambahkan!');
+        showToast('Belum ada item yang ditambahkan!', 'warning');
         return;
     }
     
@@ -559,13 +626,13 @@ function submitBulkReservation() {
         const itemText = select.options[select.selectedIndex].text;
         
         if (!itemId) {
-            alert(`Baris ${index + 1}: Pilih item terlebih dahulu`);
+            showToast(`Baris ${index + 1}: Pilih item terlebih dahulu`, 'warning');
             hasError = true;
             return;
         }
         
         if (!quantity || quantity <= 0) {
-            alert(`Baris ${index + 1}: Jumlah harus lebih dari 0`);
+            showToast(`Baris ${index + 1}: Jumlah harus lebih dari 0`, 'warning');
             hasError = true;
             return;
         }
@@ -660,7 +727,7 @@ async function executeBulkReservation() {
                 message += '\n⚠️ Error:\n' + result.errors.join('\n');
             }
             
-            alert(message);
+            showToast(message, 'success');
             
             closeBulkConfirmModal();
             
@@ -672,12 +739,12 @@ async function executeBulkReservation() {
             await loadAvailableItems();
             loadItems();
         } else {
-            alert('Error: ' + (result.error || 'Gagal menyimpan reservasi'));
+            showToast('Error: ' + (result.error || 'Gagal menyimpan reservasi'), 'error');
         }
         
     } catch (error) {
         console.error('Error submitting bulk reservation:', error);
-        alert('Terjadi kesalahan saat menyimpan');
+        showToast('Terjadi kesalahan saat menyimpan', 'error');
     }
 }
 // Panggil saat halaman dimuat
