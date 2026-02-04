@@ -199,19 +199,19 @@ button:hover {
     background: #38a169;
 }
 
-.btn-out {
+.btn-delete {
     background: #f56565;
 }
 
-.btn-out:hover {
+.btn-delete:hover {
     background: #e53e3e;
 }
 
-.btn-delete {
+.btn-out {
     background: #ed8936;
 }
 
-.btn-delete:hover {
+.btn-out:hover {
     background: #dd6b20;
 }
 

@@ -354,7 +354,7 @@ async function loadReport() {
                     </div>
                     <div class="report-summary">
                         <div class="summary-box added">
-                            <span class="summary-label">Ditambahkan</span>
+                            <span class="summary-label">Reservasi</span>
                             <span class="summary-value">+${item.total_added}</span>
                         </div>
                         <div class="summary-box used">
