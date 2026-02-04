@@ -744,3 +744,10 @@ input[type="datetime-local"]:focus {
         width: 100%;
     }
 }
+.btn-edit {
+    background: #3498db;
+}
+
+.btn-edit:hover {
+    background: #2980b9;
+}

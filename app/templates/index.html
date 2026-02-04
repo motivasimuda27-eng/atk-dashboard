@@ -47,7 +47,7 @@
                 </div>
 
                 <div class="section">
-                    <h2>Reservasi Stock Massal</h2>
+                    <h2>Reservasi Stock</h2>
                     <div class="bulk-reservation-form">
                         <div class="bulk-header">
                             <label for="bulkReservationDate" style="font-weight: 600; color: #333;">Tanggal Reservasi:</label>
@@ -119,6 +119,62 @@
                 <div class="modal-footer">
                     <button onclick="closeDeleteModal()" class="btn-cancel">Batal</button>
                     <button onclick="confirmDelete()" class="btn-delete">Hapus</button>
+                </div>
+            </div>
+        </div>
+        <!-- Modal untuk Edit Item -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Item</h2>
+                    <span class="close" onclick="closeEditModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editItemId">
+                    <label for="editMID">MID:</label>
+                    <input type="text" id="editMID" required>
+                    
+                    <label for="editName">Nama Item:</label>
+                    <input type="text" id="editName" required>
+                    
+                    <label for="editStock">Stock:</label>
+                    <input type="number" id="editStock" min="0" required>
+                    
+                    <label for="editUnit">Satuan:</label>
+                    <input type="text" id="editUnit" required>
+                    
+                    <label for="editStorage">Lokasi Penyimpanan:</label>
+                    <input type="text" id="editStorage">
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeEditModal()" class="btn-cancel">Batal</button>
+                    <button onclick="confirmEdit()" class="btn-confirm">Simpan</button>
+                </div>
+            </div>
+        </div>
+        <!-- Modal Konfirmasi Bulk Reservation -->
+        <div id="bulkConfirmModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Konfirmasi Reservasi</h2>
+                    <span class="close" onclick="closeBulkConfirmModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Tanggal:</strong> <span id="confirmDate"></span></p>
+                    <table class="transactions-table" style="margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Item</th>
+                                <th>Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody id="confirmItemsList"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeBulkConfirmModal()" class="btn-cancel">Batal</button>
+                    <button onclick="executeBulkReservation()" class="btn-confirm">Konfirmasi</button>
                 </div>
             </div>
         </div>

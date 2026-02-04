@@ -54,11 +54,15 @@ async function loadItems() {
                     <div class="item-stock">${item.stock} ${item.unit}</div>
                 </div>
                 <div class="item-actions">
+                    
                     <button class="btn-in" onclick="updateStock(${item.id}, 'in')">
                         ➕ Tambah Stok
                     </button>
                     <button class="btn-out" onclick="updateStock(${item.id}, 'out')">
                         ➖ Kurangi Stok
+                    </button>
+                    <button class="btn-edit" onclick="editItem(${item.id}, '${item.mid}', '${item.name.replace(/'/g, "\\'")}', ${item.stock}, '${item.unit}', '${(item.storage_location || '').replace(/'/g, "\\'")}')">
+                        ✏️ Edit
                     </button>
                     <button class="btn-delete" onclick="deleteItem(${item.id})">
                         🗑️ Hapus
@@ -219,11 +223,85 @@ async function confirmDelete() {
     }
 }
 
+//fungsi untuk mengedit item (menampilkan modal)
+function editItem(itemId, mid, name, stock, unit, storage) {
+    document.getElementById('editItemId').value = itemId;
+    document.getElementById('editMID').value = mid;
+    document.getElementById('editName').value = name;
+    document.getElementById('editStock').value = stock;
+    document.getElementById('editUnit').value = unit;
+    document.getElementById('editStorage').value = storage;
+    document.getElementById('editModal').classList.add('show');
+    document.getElementById('editMID').focus();
+}
+
+//fungsi untuk menutup modal edit
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('show');
+}
+
+//fungsi untuk mengonfirmasi edit item
+async function confirmEdit() {
+    const itemId = document.getElementById('editItemId').value;
+    const mid = document.getElementById('editMID').value.trim();
+    const name = document.getElementById('editName').value.trim();
+    const stock = parseInt(document.getElementById('editStock').value);
+    const unit = document.getElementById('editUnit').value.trim();
+    const storage_location = document.getElementById('editStorage').value.trim();
+
+    //validasi
+    if (!mid || !name || !unit) {
+        alert('MID, Nama, dan Satuan wajib diisi!');
+        return;
+    }
+    
+    if (stock < 0) {
+        alert('Stock tidak boleh negatif!');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/items/${itemId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ mid, name, stock, unit, storage_location })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('Item berhasil diperbarui!');
+            closeEditModal();
+            loadItems();
+            loadAvailableItems(); // Refresh dropdown bulk reservation
+        } else {
+            alert(result.error || 'Gagal memperbarui item');
+        }
+        
+    } catch (error) {
+        console.error('Error editing item:', error);
+        alert('Terjadi kesalahan');
+    }
+}
+
 // Tutup modal saat klik di luar modal
 window.onclick = function(event) {
     const stockModal = document.getElementById('stockModal');
     const deleteModal = document.getElementById('deleteModal');
+    const bulkConfirmModal = document.getElementById('bulkConfirmModal');
+    const editModal = document.getElementById('editModal');
+
+    if (event.target === editModal) {
+        closeEditModal();
+    }
     
+    if (event.target === bulkConfirmModal) {
+        closeBulkConfirmModal();
+    }
+    
+
     if (event.target === stockModal) {
         closeStockModal();
     }
@@ -237,6 +315,8 @@ document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeStockModal();
         closeDeleteModal();
+        closeBulkConfirmModal();
+        closeEditModal();
     }
 });
 
@@ -419,7 +499,11 @@ function updateRowNumbers() {
 }
 
 // Submit bulk reservation
-async function submitBulkReservation() {
+// Data sementara untuk konfirmasi
+let pendingBulkData = null;
+
+// Validasi dan tampilkan modal konfirmasi
+function submitBulkReservation() {
     const date = document.getElementById('bulkReservationDate').value;
     
     if (!date) {
@@ -443,6 +527,7 @@ async function submitBulkReservation() {
         
         const itemId = select.value;
         const quantity = parseInt(quantityInput.value);
+        const itemText = select.options[select.selectedIndex].text;
         
         if (!itemId) {
             alert(`Baris ${index + 1}: Pilih item terlebih dahulu`);
@@ -458,15 +543,65 @@ async function submitBulkReservation() {
         
         items.push({
             item_id: parseInt(itemId),
-            quantity: quantity
+            quantity: quantity,
+            display_name: itemText
         });
     });
     
     if (hasError) return;
     
-    // Convert date to ISO format
+    // Simpan data sementara
+    pendingBulkData = {
+        items: items,
+        date: date
+    };
+    
+    // Tampilkan modal konfirmasi
+    showBulkConfirmModal(date, items);
+}
+
+// Tampilkan modal konfirmasi
+function showBulkConfirmModal(date, items) {
     const dateObj = new Date(date);
+    const formattedDate = dateObj.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    document.getElementById('confirmDate').textContent = formattedDate;
+    
+    const tbody = document.getElementById('confirmItemsList');
+    tbody.innerHTML = items.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.display_name}</td>
+            <td style="font-weight: 600; color: #48bb78;">+${item.quantity}</td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('bulkConfirmModal').classList.add('show');
+}
+
+// Tutup modal konfirmasi
+function closeBulkConfirmModal() {
+    document.getElementById('bulkConfirmModal').classList.remove('show');
+    pendingBulkData = null;
+}
+
+// Eksekusi bulk reservation setelah konfirmasi
+async function executeBulkReservation() {
+    if (!pendingBulkData) return;
+    
+    const dateObj = new Date(pendingBulkData.date);
     const isoDate = dateObj.toISOString();
+    
+    // Hapus display_name sebelum kirim ke server
+    const itemsToSend = pendingBulkData.items.map(item => ({
+        item_id: item.item_id,
+        quantity: item.quantity
+    }));
     
     try {
         const response = await fetch('/api/items/bulk_reservation', {
@@ -475,7 +610,7 @@ async function submitBulkReservation() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                items: items,
+                items: itemsToSend,
                 date: isoDate
             })
         });
@@ -498,13 +633,15 @@ async function submitBulkReservation() {
             
             alert(message);
             
+            closeBulkConfirmModal();
+            
             // Clear form
             document.getElementById('reservationItemsContainer').innerHTML = '';
-            document.getElementById('bulkReservationDate').value = '';
+            document.getElementById('bulkReservationDate').value = new Date().toISOString().slice(0, 10);
             
-            // Reload items dan tambah baris baru
+            // Reload items
             await loadAvailableItems();
-            loadItems(); // Refresh stock list
+            loadItems();
         } else {
             alert('Error: ' + (result.error || 'Gagal menyimpan reservasi'));
         }
@@ -514,7 +651,6 @@ async function submitBulkReservation() {
         alert('Terjadi kesalahan saat menyimpan');
     }
 }
-
 // Panggil saat halaman dimuat
 document.addEventListener('DOMContentLoaded', function() {
     loadItems();

@@ -111,6 +111,46 @@ def add_item():
     
     return jsonify({'id': item_id, 'message': 'Item berhasil ditambahkan'}), 201
 
+# API untuk edit item
+@app.route('/api/items/<int:item_id>', methods=['PUT'])
+def edit_item(item_id):
+    """
+    Endpoint API untuk mengubah data item ATK
+    Method: PUT
+    Parameter: item_id (ID item yang akan diubah)
+    Body: JSON {mid, name, stock, unit, storage_location}
+    """
+    data = request.get_json()
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Cek apakah item ada
+    cursor.execute('SELECT * FROM items WHERE id = ?', (item_id,))
+    item = cursor.fetchone()
+    
+    if not item:
+        conn.close()
+        return jsonify({'error': 'Item tidak ditemukan'}), 404
+    
+    # Cek duplikat MID (kecuali item sendiri)
+    cursor.execute('SELECT id FROM items WHERE mid = ? AND id != ?', (data['mid'], item_id))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'MID sudah digunakan oleh item lain'}), 400
+    
+    # Update item
+    cursor.execute('''
+        UPDATE items 
+        SET mid = ?, name = ?, stock = ?, unit = ?, storage_location = ?
+        WHERE id = ?
+    ''', (data['mid'], data['name'], data['stock'], data['unit'], data.get('storage_location', ''), item_id))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'message': 'Item berhasil diperbarui'})
+
 # API untuk update stok (tambah/kurang)
 @app.route('/api/items/<int:item_id>/stock', methods=['PUT'])
 def update_stock(item_id):
