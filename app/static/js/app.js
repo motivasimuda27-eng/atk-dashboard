@@ -95,25 +95,58 @@ function showTab(tabName) {
 }
 
 // Fungsi untuk memuat daftar ATK dari server
+// Fungsi untuk memuat daftar ATK dari server
 async function loadItems() {
     try {
         const response = await fetch('/api/items');
         
-        // Handle HTTP errors
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
             throw new Error(result.error || `HTTP error: ${response.status}`);
         }
         
-        const items = await response.json();
-        const itemsList = document.getElementById('itemsList');
+        allItems = await response.json(); // Simpan ke global variable
+        renderItems(allItems); // Render items
         
-        if (items.length === 0) {
-            itemsList.innerHTML = '<p>Belum ada item ATK. Tambahkan item baru di atas.</p>';
-            return;
+    } catch (error) {
+        console.error('Error loading items:', error);
+        
+        if (!navigator.onLine) {
+            showToast('Tidak ada koneksi internet', 'error');
+        } else {
+            showToast(error.message || 'Gagal memuat daftar item', 'error');
+        }
+    }
+}
+
+// Fungsi untuk render items (dipisah dari load agar bisa di-filter)
+function renderItems(items) {
+    const itemsList = document.getElementById('itemsList');
+    const itemsCount = document.getElementById('itemsCount');
+    
+    if (items.length === 0) {
+        itemsList.innerHTML = '<p>Tidak ada item yang sesuai dengan filter.</p>';
+        itemsCount.textContent = '';
+        return;
+    }
+    
+    // Update count
+    itemsCount.textContent = `Menampilkan ${items.length} item${items.length > 1 ? '' : ''}`;
+    
+    itemsList.innerHTML = items.map(item => {
+        // Tentukan stock badge
+        let stockBadge = '';
+        if (item.stock === 0) {
+            stockBadge = '<span class="stock-badge empty">HABIS</span>';
+        } else if (item.stock < 10) {
+            stockBadge = '<span class="stock-badge low">RENDAH</span>';
+        } else if (item.stock <= 50) {
+            stockBadge = '<span class="stock-badge medium">SEDANG</span>';
+        } else {
+            stockBadge = '<span class="stock-badge high">TINGGI</span>';
         }
         
-        itemsList.innerHTML = items.map(item => `
+        return `
             <div class="item-card">
                 <div class="item-header">
                     <div>
@@ -122,7 +155,10 @@ async function loadItems() {
                         <div style="color: #666; font-size: 0.9em;">Satuan: ${item.unit}</div>
                         <div style="color: #666; font-size: 0.9em;">Lokasi: ${item.storage_location || 'Belum ditentukan'}</div>
                     </div>
-                    <div class="item-stock">${item.stock} ${item.unit}</div>
+                    <div>
+                        <div class="item-stock">${item.stock} ${item.unit}</div>
+                        ${stockBadge}
+                    </div>
                 </div>
                 <div class="item-actions">
                     <button class="btn-in" onclick="updateStock(${item.id}, 'in')">
@@ -139,21 +175,9 @@ async function loadItems() {
                     </button>
                 </div>
             </div>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error loading items:', error);
-        
-        // Handle network error
-        if (!navigator.onLine) {
-            showToast('Tidak ada koneksi internet', 'error');
-        } else {
-            showToast(error.message || 'Gagal memuat daftar item', 'error');
-        }
-    }
+        `;
+    }).join('');
 }
-
-// Fungsi untuk menambah item baru
 // Fungsi untuk menambah item baru
 async function addItem(e) {
     e.preventDefault();
@@ -208,6 +232,7 @@ async function addItem(e) {
 // Variabel global untuk menyimpan data modal
 let currentStockAction = { itemId: null, type: null };
 let currentDeleteId = null;
+let allitems = [];
 
 // Fungsi untuk update stok (menampilkan modal)
 function updateStock(itemId, type) {
@@ -787,3 +812,77 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('addItemForm').addEventListener('submit', addItem);
 });
+
+// ===== SEARCH & FILTER FUNCTIONS =====
+
+function filterItems() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const sortBy = document.getElementById('sortBy').value;
+    const filterStock = document.getElementById('filterStock').value;
+    
+    // Copy array agar tidak merusak original
+    let filtered = [...allItems];
+    
+    // 1. Filter berdasarkan search term (MID atau Nama)
+    if (searchTerm) {
+        filtered = filtered.filter(item => 
+            item.mid.toLowerCase().includes(searchTerm) ||
+            item.name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // 2. Filter berdasarkan stock level
+    if (filterStock !== 'all') {
+        filtered = filtered.filter(item => {
+            switch(filterStock) {
+                case 'empty':
+                    return item.stock === 0;
+                case 'low':
+                    return item.stock > 0 && item.stock < 10;
+                case 'medium':
+                    return item.stock >= 10 && item.stock <= 50;
+                case 'high':
+                    return item.stock > 50;
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    // 3. Sort
+    filtered.sort((a, b) => {
+        switch(sortBy) {
+            case 'name-asc':
+                return a.name.localeCompare(b.name);
+            case 'name-desc':
+                return b.name.localeCompare(a.name);
+            case 'stock-asc':
+                return a.stock - b.stock;
+            case 'stock-desc':
+                return b.stock - a.stock;
+            case 'mid-asc':
+                return a.mid.localeCompare(b.mid);
+            case 'location-asc':
+                const locA = a.storage_location || 'ZZZ';
+                const locB = b.storage_location || 'ZZZ';
+                return locA.localeCompare(locB);
+            case 'location-desc':
+                const locA2 = a.storage_location || '';
+                const locB2 = b.storage_location || '';
+                return locB2.localeCompare(locA2);
+            default:
+                return 0;
+        }
+    });
+    
+    // Render filtered results
+    renderItems(filtered);
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('sortBy').value = 'name-asc';
+    document.getElementById('filterStock').value = 'all';
+    renderItems(allItems);
+    showToast('Filter telah direset', 'info', 3000);
+}

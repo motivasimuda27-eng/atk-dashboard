@@ -72,6 +72,37 @@
             <div id="stock" class="sub-tab-content">
                 <div class="section">
                     <h2>Daftar ATK</h2>
+                    
+                    <!-- Search & Filter Section -->
+                    <div class="search-filter-container">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="🔍 Cari berdasarkan MID atau Nama..." onkeyup="filterItems()">
+                        </div>
+                        
+                        <div class="filter-controls">
+                            <select id="sortBy" onchange="filterItems()">
+                                <option value="name-asc">Nama (A-Z)</option>
+                                <option value="name-desc">Nama (Z-A)</option>
+                                <option value="stock-asc">Stock (Rendah-Tinggi)</option>
+                                <option value="stock-desc">Stock (Tinggi-Rendah)</option>
+                                <option value="mid-asc">MID (A-Z)</option>
+                                <option value="location-asc">Lokasi (A-Z)</option>
+                                <option value="location-desc">Lokasi (Z-A)</option>
+                            </select>
+                            
+                            <select id="filterStock" onchange="filterItems()">
+                                <option value="all">Semua Stock</option>
+                                <option value="low">Stock Rendah (&lt;10)</option>
+                                <option value="medium">Stock Sedang (10-50)</option>
+                                <option value="high">Stock Tinggi (&gt;50)</option>
+                                <option value="empty">Stock Kosong (0)</option>
+                            </select>
+                            
+                            <button onclick="resetFilters()" class="btn-reset">Reset</button>
+                        </div>
+                    </div>
+                    
+                    <div id="itemsCount" class="items-count"></div>
                     <div id="itemsList"></div>
                 </div>
             </div>

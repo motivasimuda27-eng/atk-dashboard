@@ -921,3 +921,133 @@ input[type="datetime-local"]:focus {
         width: 100%;
     }
 }
+
+/* ===== SEARCH & FILTER STYLES ===== */
+
+.search-filter-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-box {
+    margin-bottom: 15px;
+}
+
+.search-box input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: border-color 0.3s;
+}
+
+.search-box input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-controls select {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.filter-controls select:hover {
+    border-color: #667eea;
+}
+
+.filter-controls select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-reset {
+    padding: 10px 20px;
+    background: #f56565;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.3s;
+    white-space: nowrap;
+}
+
+.btn-reset:hover {
+    background: #e53e3e;
+}
+
+.items-count {
+    padding: 10px 15px;
+    background: #f0f4ff;
+    border-left: 4px solid #667eea;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    color: #333;
+    font-weight: 600;
+}
+
+.item-card.hidden {
+    display: none;
+}
+
+/* Stock badge styles */
+.stock-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.stock-badge.empty {
+    background: #fee;
+    color: #c53030;
+}
+
+.stock-badge.low {
+    background: #fef5e7;
+    color: #d68910;
+}
+
+.stock-badge.medium {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.stock-badge.high {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filter-controls {
+        flex-direction: column;
+    }
+    
+    .filter-controls select {
+        width: 100%;
+        min-width: auto;
+    }
+}
