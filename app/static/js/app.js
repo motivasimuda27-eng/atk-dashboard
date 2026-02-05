@@ -97,11 +97,15 @@ function showTab(tabName) {
 // Fungsi untuk memuat daftar ATK dari server
 async function loadItems() {
     try {
-        // Fetch data dari API
         const response = await fetch('/api/items');
-        const items = await response.json();
         
-        // Tampilkan di HTML
+        // Handle HTTP errors
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error || `HTTP error: ${response.status}`);
+        }
+        
+        const items = await response.json();
         const itemsList = document.getElementById('itemsList');
         
         if (items.length === 0) {
@@ -121,7 +125,6 @@ async function loadItems() {
                     <div class="item-stock">${item.stock} ${item.unit}</div>
                 </div>
                 <div class="item-actions">
-                    
                     <button class="btn-in" onclick="updateStock(${item.id}, 'in')">
                         ➕ Tambah Stok
                     </button>
@@ -140,46 +143,65 @@ async function loadItems() {
         
     } catch (error) {
         console.error('Error loading items:', error);
-        showToast('Gagal memuat daftar item', 'error');
+        
+        // Handle network error
+        if (!navigator.onLine) {
+            showToast('Tidak ada koneksi internet', 'error');
+        } else {
+            showToast(error.message || 'Gagal memuat daftar item', 'error');
+        }
     }
 }
 
 // Fungsi untuk menambah item baru
+// Fungsi untuk menambah item baru
 async function addItem(e) {
-    e.preventDefault();  // Mencegah form reload halaman
+    e.preventDefault();
     
-    // Ambil data dari form
-    const mid = document.getElementById('itemMID').value;
-    const name = document.getElementById('itemName').value;
+    const mid = document.getElementById('itemMID').value.trim();
+    const name = document.getElementById('itemName').value.trim();
     const stock = parseInt(document.getElementById('itemStock').value);
-    const unit = document.getElementById('itemUnit').value;
-    const storage_location = document.getElementById('itemStorage').value;
+    const unit = document.getElementById('itemUnit').value.trim();
+    const storage_location = document.getElementById('itemStorage').value.trim();
+    
+    // Validasi client-side
+    if (!mid || !name || !unit) {
+        showToast('MID, Nama, dan Satuan wajib diisi', 'warning');
+        return;
+    }
+    
+    if (isNaN(stock) || stock < 0) {
+        showToast('Stock harus berupa angka positif', 'warning');
+        return;
+    }
     
     try {
-        // Kirim data ke server
         const response = await fetch('/api/items', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({mid, name, stock, unit, storage_location})
         });
         
+        const result = await response.json();
+        
         if (response.ok) {
             showToast('Item berhasil ditambahkan!', 'success');
-            // Reset form
             document.getElementById('addItemForm').reset();
-            // Reload daftar item
             loadItems();
             loadAvailableItems();
             updateAllDropdowns();
         } else {
-            showToast('Gagal menambahkan item', 'error');
+            // Tampilkan error spesifik dari server
+            showToast(result.error || 'Gagal menambahkan item', 'error');
         }
         
     } catch (error) {
         console.error('Error adding item:', error);
-        showToast('Terjadi kesalahan', 'error');
+        if (!navigator.onLine) {
+            showToast('Tidak ada koneksi internet', 'error');
+        } else {
+            showToast('Server tidak merespon', 'error');
+        }
     }
 }
 
@@ -267,28 +289,34 @@ function closeDeleteModal() {
 }
 
 // Fungsi untuk confirm delete
+// Fungsi untuk confirm delete
 async function confirmDelete() {
     const itemId = currentDeleteId;
     
     try {
         const response = await fetch(`/api/items/${itemId}`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
+        
+        const result = await response.json();
         
         if (response.ok) {
             showToast('Item berhasil dihapus!', 'success');
             closeDeleteModal();
             loadItems();
+            loadAvailableItems();
         } else {
-            showToast('Gagal menghapus item', 'error');
+            showToast(result.error || 'Gagal menghapus item', 'error');
         }
         
     } catch (error) {
         console.error('Error deleting item:', error);
-        showToast('Terjadi kesalahan', 'error');
+        if (!navigator.onLine) {
+            showToast('Tidak ada koneksi internet', 'error');
+        } else {
+            showToast('Server tidak merespon', 'error');
+        }
     }
 }
 

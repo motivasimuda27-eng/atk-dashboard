@@ -3,9 +3,24 @@ from flask import Flask, render_template, request, jsonify
 import sqlite3
 from datetime import datetime
 import os
+from contextlib import contextmanager
 
 # Inisialisasi aplikasi Flask
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
+
+#context manager untuk koneksi database
+@contextmanager
+def get_db_connection():
+    """
+    Context manager untuk koneksi database SQLite.
+    koneksi akan otomatis ditutup meski terjadi error.
+    """
+    conn = sqlite3.connect('atk.db')
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 # Fungsi untuk koneksi ke database
 def get_db():
@@ -66,156 +81,235 @@ def index():
 def get_items():
     """
     Endpoint API untuk mengambil semua data ATK
-    Method: GET
-    Return: JSON array berisi semua item ATK
     """
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM items ORDER BY name')
-    items = cursor.fetchall()
-    conn.close()
-    
-    # Konversi hasil query ke list of dict
-    items_list = []
-    for item in items:
-        items_list.append({
-            'id': item['id'],
-            'mid': item['mid'],
-            'name': item['name'],
-            'stock': item['stock'],
-            'unit': item['unit'],
-            'storage_location': item['storage_location']
-        })
-    
-    return jsonify(items_list)
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM items ORDER BY name')
+            items = cursor.fetchall()
+            
+            items_list = [{
+                'id': item['id'],
+                'mid': item['mid'],
+                'name': item['name'],
+                'stock': item['stock'],
+                'unit': item['unit'],
+                'storage_location': item['storage_location']
+            } for item in items]
+            
+            return jsonify(items_list)
+    except sqlite3.Error as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
 
 # API untuk menambah item ATK baru
 @app.route('/api/items', methods=['POST'])
 def add_item():
     """
     Endpoint API untuk menambah item ATK baru
-    Method: POST
-    Body: JSON {name, stock, unit}
     """
-    data = request.get_json()
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO items (mid, name, stock, unit, storage_location) VALUES (?, ?, ?, ?, ?)',
-        (data['mid'], data['name'], data['stock'], data['unit'], data.get('storage_location', ''))
-    )
-    conn.commit()
-    item_id = cursor.lastrowid
-    conn.close()
-    
-    return jsonify({'id': item_id, 'message': 'Item berhasil ditambahkan'}), 201
-
+    try:
+        data = request.get_json()
+        
+        # Validasi request body
+        if not data:
+            return jsonify({'error': 'Request body tidak boleh kosong'}), 400
+        
+        # Validasi required fields
+        required_fields = ['mid', 'name', 'stock', 'unit']
+        missing = [f for f in required_fields if f not in data or data[f] == '']
+        if missing:
+            return jsonify({'error': f'Field wajib diisi: {", ".join(missing)}'}), 400
+        
+        # Validasi tipe data stock
+        try:
+            stock = int(data['stock'])
+            if stock < 0:
+                return jsonify({'error': 'Stock tidak boleh negatif'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Stock harus berupa angka'}), 400
+        
+        # Validasi panjang input
+        if len(data['mid']) > 50:
+            return jsonify({'error': 'MID maksimal 50 karakter'}), 400
+        if len(data['name']) > 100:
+            return jsonify({'error': 'Nama maksimal 100 karakter'}), 400
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Cek duplikat MID
+            cursor.execute('SELECT id FROM items WHERE mid = ?', (data['mid'],))
+            if cursor.fetchone():
+                return jsonify({'error': 'MID sudah digunakan'}), 400
+            
+            cursor.execute(
+                'INSERT INTO items (mid, name, stock, unit, storage_location) VALUES (?, ?, ?, ?, ?)',
+                (data['mid'].strip(), data['name'].strip(), stock, data['unit'].strip(), data.get('storage_location', '').strip())
+            )
+            conn.commit()
+            item_id = cursor.lastrowid
+            
+        return jsonify({'id': item_id, 'message': 'Item berhasil ditambahkan'}), 201
+        
+    except sqlite3.IntegrityError as e:
+        return jsonify({'error': 'MID sudah digunakan oleh item lain'}), 400
+    except sqlite3.Error as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
 # API untuk edit item
 @app.route('/api/items/<int:item_id>', methods=['PUT'])
 def edit_item(item_id):
     """
     Endpoint API untuk mengubah data item ATK
-    Method: PUT
-    Parameter: item_id (ID item yang akan diubah)
-    Body: JSON {mid, name, stock, unit, storage_location}
     """
-    data = request.get_json()
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Cek apakah item ada
-    cursor.execute('SELECT * FROM items WHERE id = ?', (item_id,))
-    item = cursor.fetchone()
-    
-    if not item:
-        conn.close()
-        return jsonify({'error': 'Item tidak ditemukan'}), 404
-    
-    # Cek duplikat MID (kecuali item sendiri)
-    cursor.execute('SELECT id FROM items WHERE mid = ? AND id != ?', (data['mid'], item_id))
-    if cursor.fetchone():
-        conn.close()
-        return jsonify({'error': 'MID sudah digunakan oleh item lain'}), 400
-    
-    # Update item
-    cursor.execute('''
-        UPDATE items 
-        SET mid = ?, name = ?, stock = ?, unit = ?, storage_location = ?
-        WHERE id = ?
-    ''', (data['mid'], data['name'], data['stock'], data['unit'], data.get('storage_location', ''), item_id))
-    
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'message': 'Item berhasil diperbarui'})
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Request body tidak boleh kosong'}), 400
+        
+        # Validasi required fields
+        required_fields = ['mid', 'name', 'stock', 'unit']
+        missing = [f for f in required_fields if f not in data or data[f] == '']
+        if missing:
+            return jsonify({'error': f'Field wajib diisi: {", ".join(missing)}'}), 400
+        
+        # Validasi stock
+        try:
+            stock = int(data['stock'])
+            if stock < 0:
+                return jsonify({'error': 'Stock tidak boleh negatif'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Stock harus berupa angka'}), 400
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Cek apakah item ada
+            cursor.execute('SELECT * FROM items WHERE id = ?', (item_id,))
+            item = cursor.fetchone()
+            
+            if not item:
+                return jsonify({'error': 'Item tidak ditemukan'}), 404
+            
+            # Cek duplikat MID
+            cursor.execute('SELECT id FROM items WHERE mid = ? AND id != ?', (data['mid'], item_id))
+            if cursor.fetchone():
+                return jsonify({'error': 'MID sudah digunakan oleh item lain'}), 400
+            
+            cursor.execute('''
+                UPDATE items 
+                SET mid = ?, name = ?, stock = ?, unit = ?, storage_location = ?
+                WHERE id = ?
+            ''', (data['mid'].strip(), data['name'].strip(), stock, data['unit'].strip(), 
+                  data.get('storage_location', '').strip(), item_id))
+            
+            conn.commit()
+            
+        return jsonify({'message': 'Item berhasil diperbarui'})
+        
+    except sqlite3.Error as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
 
 # API untuk update stok (tambah/kurang)
 @app.route('/api/items/<int:item_id>/stock', methods=['PUT'])
 def update_stock(item_id):
     """
     Endpoint API untuk menambah atau mengurangi stok
-    Method: PUT
-    Parameter: item_id (ID item yang akan diupdate)
-    Body: JSON {type: 'in'/'out', quantity, date}
     """
-    data = request.get_json()
-    transaction_type = data['type']  # 'in' untuk tambah, 'out' untuk kurang
-    quantity = int(data['quantity'])
-    transaction_date = data.get('date', datetime.now().isoformat())
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Ambil stok saat ini
-    cursor.execute('SELECT stock FROM items WHERE id = ?', (item_id,))
-    current_stock = cursor.fetchone()['stock']
-    
-    # Hitung stok baru
-    if transaction_type == 'in':
-        new_stock = current_stock + quantity
-    else:  # 'out'
-        new_stock = current_stock - quantity
-        if new_stock < 0:
-            conn.close()
-            return jsonify({'error': 'Stok tidak cukup'}), 400
-    
-    # Update stok
-    cursor.execute('UPDATE items SET stock = ? WHERE id = ?', (new_stock, item_id))
-    
-    # Catat transaksi
-    cursor.execute(
-        'INSERT INTO transactions (item_id, type, quantity, date) VALUES (?, ?, ?, ?)',
-        (item_id, transaction_type, quantity, transaction_date)
-    )
-    
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'message': 'Stok berhasil diupdate', 'new_stock': new_stock})
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Request body tidak boleh kosong'}), 400
+        
+        # Validasi type
+        transaction_type = data.get('type')
+        if transaction_type not in ['in', 'out']:
+            return jsonify({'error': 'Type harus "in" atau "out"'}), 400
+        
+        # Validasi quantity
+        try:
+            quantity = int(data.get('quantity', 0))
+            if quantity <= 0:
+                return jsonify({'error': 'Quantity harus lebih dari 0'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Quantity harus berupa angka'}), 400
+        
+        transaction_date = data.get('date', datetime.now().isoformat())
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Ambil stok saat ini
+            cursor.execute('SELECT stock, name FROM items WHERE id = ?', (item_id,))
+            row = cursor.fetchone()
+            
+            if not row:
+                return jsonify({'error': 'Item tidak ditemukan'}), 404
+            
+            current_stock = row['stock']
+            
+            # Hitung stok baru
+            if transaction_type == 'in':
+                new_stock = current_stock + quantity
+            else:
+                new_stock = current_stock - quantity
+                if new_stock < 0:
+                    return jsonify({'error': f'Stok tidak cukup. Stok saat ini: {current_stock}'}), 400
+            
+            # Update stok
+            cursor.execute('UPDATE items SET stock = ? WHERE id = ?', (new_stock, item_id))
+            
+            # Catat transaksi
+            cursor.execute(
+                'INSERT INTO transactions (item_id, type, quantity, date) VALUES (?, ?, ?, ?)',
+                (item_id, transaction_type, quantity, transaction_date)
+            )
+            
+            conn.commit()
+            
+        return jsonify({'message': 'Stok berhasil diupdate', 'new_stock': new_stock})
+        
+    except sqlite3.Error as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
 
 # API untuk menghapus item
 @app.route('/api/items/<int:item_id>', methods=['DELETE'])
 def delete_item(item_id):
     """
     Endpoint API untuk menghapus item ATK
-    Method: DELETE
-    Parameter: item_id (ID item yang akan dihapus)
     """
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Hapus transaksi terkait item terlebih dahulu
-    cursor.execute('DELETE FROM transactions WHERE item_id = ?', (item_id,))
-    
-    # Hapus item
-    cursor.execute('DELETE FROM items WHERE id = ?', (item_id,))
-    
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'message': 'Item berhasil dihapus'})
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Cek apakah item ada
+            cursor.execute('SELECT id FROM items WHERE id = ?', (item_id,))
+            if not cursor.fetchone():
+                return jsonify({'error': 'Item tidak ditemukan'}), 404
+            
+            # Hapus transaksi terkait
+            cursor.execute('DELETE FROM transactions WHERE item_id = ?', (item_id,))
+            
+            # Hapus item
+            cursor.execute('DELETE FROM items WHERE id = ?', (item_id,))
+            
+            conn.commit()
+            
+        return jsonify({'message': 'Item berhasil dihapus'})
+        
+    except sqlite3.Error as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
 
 #API untuk bulk stock reservation
 @app.route('/api/items/bulk_reservation', methods=['POST'])
