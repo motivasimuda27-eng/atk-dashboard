@@ -74,9 +74,17 @@ def init_db():
 @app.route('/')
 def index():
     """
-    Menampilkan halaman utama dashboard
+    Menampilkan halaman utama
     """
     return render_template('index.html')
+
+# Route untuk halaman dashboard
+@app.route('/dashboard')
+def dashboard():
+    """
+    Menampilkan halaman dashboard monitoring
+    """
+    return render_template('dashboard.html')
 
 # API untuk mendapatkan semua data ATK
 @app.route('/api/items', methods=['GET'])

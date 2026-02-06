@@ -14,32 +14,22 @@
                     <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
                 </div>
             <div class="header-text">
-                <h1>📊 Dashboard Monitoring ATK </h1>
+                <h1>Monitoring ATK </h1>
                 <h2>Timbangan</h2>
                 <p>Sistem Manajemen Alat Tulis Kantor</p>
+                <a href="/dashboard" class="btn-dashboard-link">📊 Lihat Dashboard Monitoring</a>
             </div>
             </div>
         </header>
 
         <!-- Navigasi Tab -->
         <div class="tabs">
-            <button class="tab-button active" onclick="showTab('dashboard')">Dashboard </button>
-            <button class="tab-button" onclick="showTab('inventory')">Inventori</button>
+            <button class="tab-button active" onclick="showTab('inventory')">Inventori</button>
             <button class="tab-button" onclick="showTab('report')">Laporan Bulanan</button>
         </div>
 
-                <!-- Tab Dashboard -->
-        <div id="dashboard" class="tab-content active">
-            <div class="section">
-                <div class="dashboard-header">
-                    <h2>📊 Monitoring Stok per Lokasi Penyimpanan</h2>
-                    <button onclick="loadDashboard()" class="btn-refresh">🔄 Refresh</button>
-                </div>
-                <div id="dashboardContent" class="dashboard-grid"></div>
-            </div>
-        </div>
         <!-- Tab Inventori -->
-        <div id="inventory" class="tab-content">
+        <div id="inventory" class="tab-content active">
             <div class="sub-tabs">
                 <button class="sub-tab-button active" onclick="showSubTab('reservasi')">Reservasi</button>
                 <button class="sub-tab-button" onclick="showSubTab('stock')">Stock</button>
