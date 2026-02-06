@@ -112,8 +112,11 @@
         <div id="report" class="tab-content">
             <div class="section">
                 <h2>Laporan Penggunaan Bulanan</h2>
-                <input type="month" id="reportMonth" value="">
-                <button onclick="loadReport()">Lihat Laporan</button>
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+                    <input type="month" id="reportMonth" value="">
+                    <button onclick="loadReport()">Lihat Laporan</button>
+                    <button onclick="exportReportCSV()" class="btn-export" style="background: #48bb78;">Export CSV</button>
+                </div>
                 <div id="reportContent"></div>
             </div>
         </div>

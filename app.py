@@ -1,9 +1,11 @@
 # Import library yang dibutuhkan
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 import sqlite3
 from datetime import datetime
 import os
 from contextlib import contextmanager
+import csv
+from io import StringIO
 
 # Inisialisasi aplikasi Flask
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
@@ -457,6 +459,132 @@ def monthly_report():
     report = list(report_dict.values())
     
     return jsonify(report)
+
+@app.route('/api/reports/monthly/export', methods=['GET'])
+def export_monthly_csv():
+    """
+    ENDPOINT API untuk export laporan bulanan ke CSV
+    Method: GET
+    Query Parameter: month (format: YYYY-MM)
+    """
+    month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+    
+    #validasi format month
+    try:
+        datetime.strptime(month, '%Y-%m')
+    except ValueError:
+        return jsonify({'error': 'Format bulan tidak valid. gunakan YYYY-MM'}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Query untuk mendapatkan semua item dan transaksi mereka di bulan tertentu
+    cursor.execute('''
+        SELECT 
+            i.id,
+            i.mid,
+            i.name,
+            i.unit,
+            i.storage_location,
+            t.id as transaction_id,
+            t.type,
+            t.quantity,
+            t.date
+        FROM items i
+        LEFT JOIN transactions t ON i.id = t.item_id 
+            AND t.date LIKE ? || '%'
+        ORDER BY i.name, t.date
+    ''', (month,))
+    
+    results = cursor.fetchall()
+    conn.close()
+
+    # Kelompokkan data per item
+    report_dict = {}
+    for row in results:
+        item_key = row['id']
+
+        if item_key not in report_dict:
+            report_dict[item_key] = {
+                'mid': row['mid'],
+                'name': row['name'],
+                'unit': row['unit'],
+                'storage_location': row['storage_location'] or 'Belum ditentukan',
+                'total_added': 0,
+                'total_used': 0,
+                'transactions': []
+            }
+
+        # Jika ada transaksi
+        if row['transaction_id']:
+            trans_data = {
+                'date': row['date'],
+                'type': row['type'],
+                'quantity': row['quantity']
+            }
+            report_dict[item_key]['transactions'].append(trans_data)
+            
+            if row['type'] == 'in':
+                report_dict[item_key]['total_added'] += row['quantity']
+            else:
+                report_dict[item_key]['total_used'] += row['quantity']
+    
+    # Konversi ke list
+    report = list(report_dict.values())
+    
+    # Buat CSV
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Header CSV
+    writer.writerow(['Tanggal Transaksi', 'MID', 'Nama Item', 'Satuan', 'Lokasi', 'Tipe', 'Jumlah', 'Total Reservasi', 'Total Digunakan'])
+    
+    # Data rows
+    for item in report:
+        if item['transactions']:
+            for trans in item['transactions']:
+                # Format tanggal
+                try:
+                    date_obj = datetime.fromisoformat(trans['date'].replace('Z', '+00:00'))
+                    formatted_date = date_obj.strftime('%d/%m/%y')
+                except:
+                    formatted_date = trans['date']
+                
+                type_label = 'Reservasi' if trans['type'] == 'in' else 'Digunakan'
+                quantity_with_sign = f"+{trans['quantity']}" if trans['type'] == 'in' else f"-{trans['quantity']}"
+                
+                writer.writerow([
+                    formatted_date,
+                    item['mid'],
+                    item['name'],
+                    item['unit'],
+                    item['storage_location'],
+                    type_label,
+                    quantity_with_sign,
+                    item['total_added'],
+                    item['total_used'],
+                ])
+        else:
+            # Item tanpa transaksi
+            writer.writerow([
+                '-',
+                item['mid'],
+                item['name'],
+                item['unit'],
+                item['storage_location'],
+                '-',
+                '-',
+                item['total_added'],
+                item['total_used'],
+            ])
+    
+    # Buat response
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8-sig'
+    response.headers['Content-Disposition'] = f'attachment; filename=laporan_atk_{month}.csv'
+    
+    return response
 
 # Jalankan aplikasi
 if __name__ == '__main__':

@@ -527,7 +527,28 @@ async function loadReport() {
         showToast('Gagal memuat laporan', 'error');
     }
 }
-
+// Fungsi untuk export laporan ke CSV
+function exportReportCSV() {
+    const month = document.getElementById('reportMonth').value;
+    
+    if (!month) {
+        showToast('Pilih bulan terlebih dahulu', 'warning');
+        return;
+    }
+    
+    // Buat URL download
+    const url = `/api/reports/monthly/export?month=${month}`;
+    
+    // Trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `laporan_atk_${month}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('File CSV berhasil diunduh!', 'success');
+}
 //sub menu
 function showSubTab(subTabName) {
     // Sembunyikan semua sub-tab
