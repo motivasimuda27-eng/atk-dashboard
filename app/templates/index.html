@@ -23,12 +23,23 @@
 
         <!-- Navigasi Tab -->
         <div class="tabs">
-            <button class="tab-button active" onclick="showTab('inventory')">Inventori</button>
+            <button class="tab-button active" onclick="showTab('dashboard')">Dashboard </button>
+            <button class="tab-button" onclick="showTab('inventory')">Inventori</button>
             <button class="tab-button" onclick="showTab('report')">Laporan Bulanan</button>
         </div>
 
+                <!-- Tab Dashboard -->
+        <div id="dashboard" class="tab-content active">
+            <div class="section">
+                <div class="dashboard-header">
+                    <h2>📊 Monitoring Stok per Lokasi Penyimpanan</h2>
+                    <button onclick="loadDashboard()" class="btn-refresh">🔄 Refresh</button>
+                </div>
+                <div id="dashboardContent" class="dashboard-grid"></div>
+            </div>
+        </div>
         <!-- Tab Inventori -->
-        <div id="inventory" class="tab-content active">
+        <div id="inventory" class="tab-content">
             <div class="sub-tabs">
                 <button class="sub-tab-button active" onclick="showSubTab('reservasi')">Reservasi</button>
                 <button class="sub-tab-button" onclick="showSubTab('stock')">Stock</button>

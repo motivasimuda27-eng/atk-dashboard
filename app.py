@@ -586,6 +586,60 @@ def export_monthly_csv():
     
     return response
 
+# API untuk dashboard - items grouped by storage location
+@app.route('/api/dashboard/storage', methods=['GET'])
+def dashboard_storage():
+    """
+    Endpoint API untuk dashboard - mengelompokkan items berdasarkan lokasi penyimpanan
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM items ORDER BY storage_location, name')
+            items = cursor.fetchall()
+            
+            # Kelompokkan berdasarkan storage location
+            storage_dict = {}
+            
+            for item in items:
+                location = item['storage_location'] if item['storage_location'] else 'Belum Ditentukan'
+                
+                if location not in storage_dict:
+                    storage_dict[location] = {
+                        'location': location,
+                        'items': [],
+                        'total_items': 0,
+                        'low_stock_count': 0,
+                        'empty_stock_count': 0
+                    }
+                
+                item_data = {
+                    'id': item['id'],
+                    'mid': item['mid'],
+                    'name': item['name'],
+                    'stock': item['stock'],
+                    'unit': item['unit']
+                }
+                
+                storage_dict[location]['items'].append(item_data)
+                storage_dict[location]['total_items'] += 1
+                
+                # Hitung low stock dan empty stock
+                if item['stock'] == 0:
+                    storage_dict[location]['empty_stock_count'] += 1
+                elif item['stock'] < 10:
+                    storage_dict[location]['low_stock_count'] += 1
+            
+            # Convert to list
+            result = list(storage_dict.values())
+            
+            return jsonify(result)
+            
+    except sqlite3.Error as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
+
 # Jalankan aplikasi
 if __name__ == '__main__':
     init_db()  # Inisialisasi database
