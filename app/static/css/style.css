@@ -1092,7 +1092,7 @@ input[type="datetime-local"]:focus {
     display: flex;
     flex-direction: column;
     height: 100%;
-    min-height: 400px;
+    min-height: px;
 }
 
 .dashboard-card:hover {

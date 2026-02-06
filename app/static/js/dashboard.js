@@ -99,7 +99,7 @@ function renderDashboard(storageData) {
         return `
             <div class="dashboard-card">
                 <div class="dashboard-card-header">
-                    <h3>📍 ${storage.location}</h3>
+                    <h3>🗃️ ${storage.location}</h3>
                     <div class="dashboard-stats">
                         <span class="stat-badge total">${storage.total_items} Item</span>
                         ${storage.empty_stock_count > 0 ? `<span class="stat-badge empty">${storage.empty_stock_count} Habis</span>` : ''}
@@ -157,7 +157,7 @@ function showAllItems(storage) {
         <div id="allItemsModal" class="modal show">
             <div class="modal-content modal-large">
                 <div class="modal-header">
-                    <h2>📍 ${storage.location} - Semua Item (${storage.items.length})</h2>
+                    <h2>🗃️ ${storage.location} - Semua Item (${storage.items.length})</h2>
                     <span class="close" onclick="closeAllItemsModal()">&times;</span>
                 </div>
                 <div class="modal-body">
