@@ -165,7 +165,7 @@ async function addItem(e) {
 // Variabel global untuk menyimpan data modal
 let currentStockAction = { itemId: null, type: null };
 let currentDeleteId = null;
-let allitems = [];
+let allItems = [];
 
 // Fungsi untuk update stok (menampilkan modal)
 function updateStock(itemId, type) {
