@@ -651,4 +651,4 @@ def dashboard_storage():
 # Jalankan aplikasi
 if __name__ == '__main__':
     init_db()  # Inisialisasi database
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
