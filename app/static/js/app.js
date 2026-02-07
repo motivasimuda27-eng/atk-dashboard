@@ -586,26 +586,7 @@ async function loadAvailableItems() {
 
 // Fungsi untuk update semua dropdown yang sudah ada
 function updateAllDropdowns() {
-    const selects = document.querySelectorAll('.item-select');
     
-    selects.forEach(select => {
-        const currentValue = select.value; // Simpan nilai yang dipilih
-        
-        // Update opsi
-        select.innerHTML = `
-            <option value="">-- Pilih Item --</option>
-            ${availableItems.map(item => `
-                <option value="${item.id}" data-unit="${item.unit}">
-                    ${item.mid} - ${item.name} (Stock: ${item.stock} ${item.unit})
-                </option>
-            `).join('')}
-        `;
-        
-        // Kembalikan nilai yang dipilih (jika masih ada)
-        if (currentValue) {
-            select.value = currentValue;
-        }
-    });
 }
 // Fungsi untuk menambah baris reservasi baru
 function addReservationRow() {
@@ -618,14 +599,16 @@ function addReservationRow() {
     
     row.innerHTML = `
         <div class="row-number">${container.children.length + 1}</div>
-        <select class="item-select" required>
-            <option value="">-- Pilih Item --</option>
-            ${availableItems.map(item => `
-                <option value="${item.id}" data-unit="${item.unit}">
-                    ${item.mid} - ${item.name} (Stock: ${item.stock} ${item.unit})
-                </option>
-            `).join('')}
-        </select>
+        <div class="search-dropdown-container">
+            <input 
+                type="text" 
+                class="item-search-input" 
+                placeholder="Ketik MID atau Nama Item..." 
+                autocomplete="off"
+                data-item-id=""
+            >
+            <div class="search-dropdown-results"></div>
+        </div>
         <input type="number" class="quantity-input" placeholder="Jumlah" min="1" required>
         <span class="unit-display">-</span>
         <button type="button" onclick="removeReservationRow('${rowId}')" class="btn-remove-row">
@@ -635,17 +618,88 @@ function addReservationRow() {
     
     container.appendChild(row);
     
-    // Event listener untuk update unit display saat item dipilih
-    const select = row.querySelector('.item-select');
-    const unitDisplay = row.querySelector('.unit-display');
-    
-    select.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const unit = selectedOption.getAttribute('data-unit') || '-';
-        unitDisplay.textContent = unit;
-    });
+    // Setup search functionality untuk row ini
+    setupSearchDropdown(row);
     
     updateRowNumbers();
+}
+
+// Setup search dropdown untuk setiap row
+function setupSearchDropdown(row) {
+    const searchInput = row.querySelector('.item-search-input');
+    const dropdownResults = row.querySelector('.search-dropdown-results');
+    const unitDisplay = row.querySelector('.unit-display');
+    
+    // Event saat user mengetik
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        if (searchTerm.length === 0) {
+            dropdownResults.innerHTML = '';
+            dropdownResults.classList.remove('show');
+            return;
+        }
+        
+        // Filter items berdasarkan MID atau nama
+        const filteredItems = availableItems.filter(item => 
+            item.mid.toLowerCase().includes(searchTerm) ||
+            item.name.toLowerCase().includes(searchTerm)
+        );
+        
+        if (filteredItems.length === 0) {
+            dropdownResults.innerHTML = '<div class="dropdown-item no-result">Tidak ada item yang cocok</div>';
+            dropdownResults.classList.add('show');
+            return;
+        }
+        
+        // Tampilkan hasil (maksimal 10 item)
+        dropdownResults.innerHTML = filteredItems.slice(0, 10).map(item => `
+            <div class="dropdown-item" data-item-id="${item.id}" data-unit="${item.unit}" data-name="${item.name}" data-mid="${item.mid}">
+                <div class="dropdown-item-mid">${item.mid}</div>
+                <div class="dropdown-item-name">${item.name}</div>
+                <div class="dropdown-item-stock">Stock: ${item.stock} ${item.unit}</div>
+            </div>
+        `).join('');
+        
+        dropdownResults.classList.add('show');
+        
+        // Event listener untuk setiap item di dropdown
+        dropdownResults.querySelectorAll('.dropdown-item:not(.no-result)').forEach(itemEl => {
+            itemEl.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-item-id');
+                const itemUnit = this.getAttribute('data-unit');
+                const itemName = this.getAttribute('data-name');
+                const itemMid = this.getAttribute('data-mid');
+                
+                // Set nilai input
+                searchInput.value = `${itemMid} - ${itemName}`;
+                searchInput.setAttribute('data-item-id', itemId);
+                
+                // Update unit display
+                unitDisplay.textContent = itemUnit;
+                
+                // Sembunyikan dropdown
+                dropdownResults.innerHTML = '';
+                dropdownResults.classList.remove('show');
+            });
+        });
+    });
+    
+    // Event saat input kehilangan fokus
+    searchInput.addEventListener('blur', function() {
+        setTimeout(() => {
+            dropdownResults.innerHTML = '';
+            dropdownResults.classList.remove('show');
+        }, 200);
+    });
+    
+    // Event saat input mendapat fokus (tampilkan semua jika sudah ada isi)
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+            // Trigger input event untuk tampilkan dropdown
+            this.dispatchEvent(new Event('input'));
+        }
+    });
 }
 
 // Fungsi untuk menghapus baris reservasi
@@ -691,13 +745,13 @@ function submitBulkReservation() {
     const items = [];
     let hasError = false;
     
-    rows.forEach((row, index) => {
-        const select = row.querySelector('.item-select');
+        rows.forEach((row, index) => {
+        const searchInput = row.querySelector('.item-search-input');
         const quantityInput = row.querySelector('.quantity-input');
         
-        const itemId = select.value;
+        const itemId = searchInput.getAttribute('data-item-id');
         const quantity = parseInt(quantityInput.value);
-        const itemText = select.options[select.selectedIndex].text;
+        const itemText = searchInput.value;
         
         if (!itemId) {
             showToast(`Baris ${index + 1}: Pilih item terlebih dahulu`, 'warning');

@@ -752,6 +752,118 @@ input[type="datetime-local"]:focus {
     background: #2980b9;
 }
 
+/* Search Dropdown Styles */
+.search-dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.item-search-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    transition: border-color 0.3s;
+}
+
+.item-search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-dropdown-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #667eea;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+}
+
+.search-dropdown-results.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #f0f4ff;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item.no-result {
+    color: #999;
+    cursor: default;
+    text-align: center;
+    padding: 20px;
+}
+
+.dropdown-item.no-result:hover {
+    background: white;
+}
+
+.dropdown-item-mid {
+    font-size: 0.85em;
+    color: #667eea;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.dropdown-item-name {
+    font-size: 0.95em;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.dropdown-item-stock {
+    font-size: 0.8em;
+    color: #666;
+}
+
+/* Update reservation row untuk accommodate search dropdown */
+.reservation-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 150px 80px 50px;
+    gap: 10px;
+    align-items: center;
+    background: white;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+/* Responsive untuk search dropdown */
+@media (max-width: 768px) {
+    .search-dropdown-results {
+        max-height: 200px;
+    }
+    
+    .dropdown-item {
+        padding: 10px;
+    }
+}
+
 /* ===== TOAST NOTIFICATION STYLES ===== */
 
 .toast-container {
