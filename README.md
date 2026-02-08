@@ -5,14 +5,14 @@ Sistem monitoring dan manajemen stok ATK (Alat Tulis Kantor) berbasis web untuk 
 ## 📋 Deskripsi
 
 Aplikasi web untuk mengelola inventori ATK dengan fitur:
--  Manajemen item (CRUD)
--  Reservasi stok batch/bulk
--  Laporan penggunaan bulanan
--  Dashboard monitoring berdasarkan lokasi penyimpanan
--  Pencarian dan filter item
--  Responsive design
+- ✅ Manajemen item (CRUD)
+- 📦 Reservasi stok batch/bulk
+- 📊 Laporan penggunaan bulanan
+- 🗃️ Dashboard monitoring berdasarkan lokasi penyimpanan
+- 🔍 Pencarian dan filter item
+- 📱 Responsive design
 
-##  Fitur Utama
+## 🚀 Fitur Utama
 
 ### 1. **Manajemen Inventori**
 - Tambah item baru dengan MID, nama, stok, satuan, dan lokasi penyimpanan
@@ -40,12 +40,13 @@ Aplikasi web untuk mengelola inventori ATK dengan fitur:
 - Filter berdasarkan level stok
 - Sorting (nama, stok, MID, lokasi)
 
-##  Teknologi
+## 🛠️ Teknologi
 
 **Backend:**
 - Python 3.11+
 - Flask 3.0.0
-- Gunicorn 21.2.0 (Production WSGI Server)
+- **Gunicorn 21.2.0** (Production - Linux/Mac only)
+- **Waitress 3.0.0** (Production - Windows compatible)
 - SQLite (database file, tidak perlu install server)
 
 **Frontend:**
@@ -62,33 +63,55 @@ atk-dashboard/
 ├── requirements.txt            # Python dependencies
 ├── Dockerfile                  # Docker configuration
 │
-├── start_production.sh         # 🚀 Production start (Linux)
-├── stop_production.sh          # 🛑 Production stop (Linux)
-├── status_production.sh        # 📊 Production status (Linux)
+├── start_production.sh         # 🚀 Production (Linux/Mac - Gunicorn)
+├── stop_production.sh          # 🛑 Stop production (Linux/Mac)
+├── status_production.sh        # 📊 Status (Linux/Mac)
 │
-├── start_production.bat        # 🚀 Production start (Windows)
-├── stop_production.bat         # 🛑 Production stop (Windows)
-├── status_production.bat       # 📊 Production status (Windows)
+├── start_production.bat        # 🚀 Production (Windows - Waitress)
+├── stop_production.bat         # 🛑 Stop production (Windows)
+├── status_production.bat       # 📊 Status (Windows)
+├── waitress_server.py          # Waitress WSGI server script
 │
+├── run.bat                     # Dev only (Windows)
+├── status.bat                  # Dev only (Windows)
+├── stop.bat                    # Dev only (Windows)
 │
 └── app/
     ├── static/
     │   ├── css/
-    │   │   └── style.css       # Styling aplikasi
+    │   │   └── style.css
     │   ├── images/
-    │   │   └── logo.png        # Logo aplikasi
+    │   │   └── logo.png
     │   └── js/
-    │       ├── app.js          # JavaScript utama
-    │       ├── dashboard.js    # JavaScript dashboard
-    │       └── toast.js        # Sistem notifikasi
+    │       ├── app.js
+    │       ├── dashboard.js
+    │       └── toast.js
     └── templates/
-        ├── index.html          # Halaman utama
-        └── dashboard.html      # Halaman dashboard
+        ├── index.html
+        └── dashboard.html
 ```
 
-##  Instalasi
+## 📦 Instalasi
 
-### 🐧 Linux/Mac (RECOMMENDED)
+### ⚠️ PENTING: Development vs Production
+
+**Development Server (`python app.py`):**
+- ❌ TIDAK AMAN untuk penggunaan sehari-hari
+- ❌ Lambat dan tidak stabil
+- ✅ Hanya untuk testing/development
+
+**Production Server:**
+- ✅ AMAN untuk penggunaan sehari-hari
+- ✅ Cepat dan stabil (multi-threaded)
+- ✅ Auto-restart jika crash
+- 🐧 **Linux/Mac**: Gunicorn (4 worker processes)
+- 💻 **Windows**: Waitress (4 threads)
+
+---
+
+## 🏭 Production Deployment
+
+### 🐧 Linux/Mac (Gunicorn)
 
 **1. Install dependencies:**
 ```bash
@@ -117,7 +140,12 @@ pip install -r requirements.txt
 
 ---
 
-### 💻 Windows Production
+### 💻 Windows Production (Waitress)
+
+⚠️ **CATATAN PENTING:** 
+- Gunicorn **TIDAK SUPPORT Windows** (error: module 'fcntl' not found)
+- Windows menggunakan **Waitress** sebagai WSGI server
+- Waitress sama powerful dengan Gunicorn untuk Windows!
 
 **1. Install dependencies:**
 ```cmd
@@ -130,13 +158,15 @@ pip install -r requirements.txt
 start_production.bat
 ```
 
-Output akan menampilkan:
+Output yang akan muncul:
 ```
 ========================================
   ATK Dashboard - Production Mode
+  Using Waitress WSGI Server
 ========================================
 
-[SUCCESS] Starting Gunicorn server...
+[INFO] Creating Waitress server script...
+[SUCCESS] Starting Waitress server...
 
 ========================================
   Server berhasil dijalankan!
@@ -145,11 +175,11 @@ Output akan menampilkan:
 [INFO] Informasi Server:
   - URL Lokal:    http://127.0.0.1:5000
   - URL Network:  http://localhost:5000
-  - Workers:      4 processes
+  - Threads:      4 threads
+  - WSGI Server:  Waitress (Windows compatible)
 
-[INFO] Log Files:
-  - Access Log:   access.log
-  - Error Log:    error.log
+[INFO] Window baru akan terbuka dengan server log.
+       Jangan tutup window tersebut!
 ```
 
 **3. Cek status:**
@@ -162,30 +192,59 @@ status_production.bat
 stop_production.bat
 ```
 
+**Atau manual dengan Python:**
+```cmd
+python waitress_server.py
+```
+
 **Akses aplikasi:**
 - Local: http://127.0.0.1:5000
 - Network: http://\[YOUR-IP\]:5000
 
 ---
 
-### Log Files (Production)
+### 🆚 Gunicorn vs Waitress
 
-Setelah menjalankan production mode, akan dibuat 3 file log:
+| Feature | Gunicorn (Linux/Mac) | Waitress (Windows) |
+|---------|---------------------|-------------------|
+| **OS Support** | ✅ Linux/Mac only | ✅ Cross-platform |
+| **Windows** | ❌ NO (fcntl error) | ✅ YES |
+| **Workers** | 4 processes | 4 threads |
+| **Performance** | ⚡ Excellent | ⚡ Excellent |
+| **Production Ready** | ✅ YES | ✅ YES |
+| **Stability** | ✅ Very Stable | ✅ Very Stable |
+| **Auto-restart** | ✅ YES | ✅ YES |
 
-- **access.log** - Semua HTTP request
-- **error.log** - Error dan exception
-- **gunicorn.log** - Server startup/shutdown
+**Kesimpulan:**
+- 🐧 **Linux/Mac** → Gunakan **Gunicorn** (`./start_production.sh`)
+- 💻 **Windows** → Gunakan **Waitress** (`start_production.bat`)
 
-**Lihat log real-time (Linux):**
+---
+
+## 🔧 Development Mode (Testing Only)
+
+### Development Server
+
+**JANGAN gunakan untuk penggunaan sehari-hari!**
+
+**Linux/Mac:**
 ```bash
-tail -f access.log
-tail -f error.log
+python app.py
 ```
 
-**Lihat log real-time (Windows):**
+**Windows:**
 ```cmd
-powershell Get-Content access.log -Wait
-powershell Get-Content error.log -Wait
+run.bat
+```
+
+**Akses:**
+```
+http://localhost:5000
+```
+
+⚠️ **WARNING**: Development server akan menampilkan warning:
+```
+WARNING: This is a development server. Do not use it in a production deployment.
 ```
 
 ---
@@ -276,7 +335,7 @@ CREATE TABLE transactions (
 |--------|----------|-----------|
 | GET | `/api/dashboard/storage` | Data dashboard |
 
-##  Cara Penggunaan
+## 💡 Cara Penggunaan
 
 ### 1. Tambah Item Baru
 1. Buka tab "Inventori" → Sub-tab "Reservasi"
@@ -311,9 +370,9 @@ CREATE TABLE transactions (
 2. Lihat item per lokasi
 3. Klik "Lihat Semua" untuk detail lengkap
 
-##  Fitur UI/UX
+## 🎨 Fitur UI/UX
 
-- **Toast Notifications**: Notifikasi real-time untuk setiap aksi
+- **Toast Notifications** Notifikasi real-time untuk setiap aksi
 - **Modal Confirmations**: Konfirmasi untuk aksi penting (hapus, bulk save)
 - **Autocomplete Search**: Pencarian item dengan dropdown suggestions
 - **Stock Badges**: Visual indicator untuk level stok (Habis, Rendah, Sedang, Tinggi)
@@ -324,38 +383,34 @@ CREATE TABLE transactions (
 ### Port
 Default port: `5000`
 
-**Production (Linux):**
-Edit `start_production.sh`:
+**Production (Linux) - Edit `start_production.sh`:**
 ```bash
-gunicorn -w 4 -b 0.0.0.0:8080 app:app  # Ubah 5000 ke 8080
+gunicorn -w 4 -b 0.0.0.0:8080 app:app  # Ubah ke port 8080
 ```
 
-**Production (Windows):**
-Edit `start_production.bat`:
-```batch
-python -m gunicorn -w 4 -b 0.0.0.0:8080 app:app
+**Production (Windows) - Edit `waitress_server.py`:**
+```python
+serve(app, host='0.0.0.0', port=8080, threads=4)  # Ubah ke port 8080
 ```
 
-**Development:**
-Edit `app.py`:
+**Development - Edit `app.py`:**
 ```python
 app.run(host='0.0.0.0', port=5000, debug=False)
 ```
 
-### Workers (Production)
-Jumlah worker processes untuk handle concurrent requests.
+### Threads/Workers (Production)
 
-**Recommended:** 2-4 x CPU cores
-
-**Linux - Edit `start_production.sh`:**
+**Linux/Mac (Gunicorn) - Edit `start_production.sh`:**
 ```bash
 gunicorn -w 8 -b 0.0.0.0:5000 app:app  # 8 workers
 ```
 
-**Windows - Edit `start_production.bat`:**
-```batch
-python -m gunicorn -w 8 -b 0.0.0.0:5000 app:app
+**Windows (Waitress) - Edit `waitress_server.py`:**
+```python
+serve(app, host='0.0.0.0', port=5000, threads=8)  # 8 threads
 ```
+
+**Recommended:** 2-4 x CPU cores
 
 ### Database Location
 Default: `atk.db` di root folder
@@ -365,31 +420,42 @@ Ubah di `app.py`:
 conn = sqlite3.connect('atk.db')
 ```
 
-##  Troubleshooting
+## 🐛 Troubleshooting
+
+### Error: module 'fcntl' not found (Windows)
+
+❌ **Problem:** Gunicorn tidak support Windows
+
+✅ **Solution:** Gunakan Waitress!
+
+```cmd
+# Install waitress
+pip install waitress==3.0.0
+
+# Gunakan script yang benar
+start_production.bat
+
+# Atau manual
+python waitress_server.py
+```
 
 ### Error: Port Already in Use
 
 **Linux/Mac:**
 ```bash
-# Cek yang menggunakan port
 lsof -i :5000
-
-# Stop production server
 ./stop_production.sh
-
-# Atau kill manual
 pkill -f "gunicorn.*app:app"
 ```
 
 **Windows:**
 ```cmd
-# Cek yang menggunakan port
 netstat -ano | findstr :5000
-
-# Stop production server
 stop_production.bat
+```
 
-# Atau kill manual
+Atau kill manual:
+```cmd
 taskkill /F /PID [PID_NUMBER]
 ```
 
@@ -412,56 +478,46 @@ start_production.bat
 pip install -r requirements.txt
 ```
 
+Pastikan terinstall:
+- Flask==3.0.0
+- gunicorn==21.2.0 (Linux/Mac)
+- waitress==3.0.0 (Windows)
+
 ### Production Server Tidak Jalan
 
-**1. Cek log error:**
-
-Linux:
+**1. Cek apakah Waitress/Gunicorn terinstall:**
 ```bash
-cat error.log
-cat gunicorn.log
+pip show waitress  # Windows
+pip show gunicorn  # Linux/Mac
 ```
 
-Windows:
-```cmd
-type error.log
-type gunicorn.log
-```
+**2. Test manual:**
 
-**2. Test Gunicorn manual:**
-
-Linux:
+Linux/Mac:
 ```bash
 gunicorn -w 1 -b 127.0.0.1:5000 app:app
 ```
 
 Windows:
 ```cmd
-python -m gunicorn -w 1 -b 127.0.0.1:5000 app:app
+python waitress_server.py
 ```
 
-**3. Pastikan Gunicorn terinstall:**
-```bash
-pip show gunicorn
-```
-
-Jika belum:
-```bash
-pip install gunicorn==21.2.0
-```
+**3. Cek error log:**
+Lihat output di terminal/command prompt untuk error details.
 
 ### Performance Lambat
 
-**Increase worker count:**
+**Increase threads/workers:**
 
 Linux - Edit `start_production.sh`:
 ```bash
 gunicorn -w 8 -b 0.0.0.0:5000 app:app
 ```
 
-Windows - Edit `start_production.bat`:
-```batch
-python -m gunicorn -w 8 -b 0.0.0.0:5000 app:app
+Windows - Edit `waitress_server.py`:
+```python
+serve(app, host='0.0.0.0', port=5000, threads=8)
 ```
 
 **Monitor resource usage:**
@@ -513,14 +569,14 @@ tail -f access.log
 ```cmd
 start_production.bat
 status_production.bat
-powershell Get-Content access.log -Wait
+# Window baru akan menampilkan log
 stop_production.bat
 ```
 
 ## 🔒 Security Checklist
 
 ✅ **Production Mode:**
-- [x] Gunakan Gunicorn (bukan Flask dev server)
+- [x] Gunakan WSGI server (Gunicorn/Waitress, bukan Flask dev)
 - [x] Disable debug mode
 - [x] Set proper file permissions
 - [x] Regular backup database
@@ -531,10 +587,11 @@ stop_production.bat
 - [ ] Enable `debug=True` di production
 - [ ] Expose database file ke public
 - [ ] Ignore error logs
+- [ ] Gunakan Gunicorn di Windows (use Waitress!)
 
 ## 📋 Quick Reference
 
-### Linux/Mac Commands
+### Linux/Mac Commands (Gunicorn)
 
 | Action | Command |
 |--------|---------|
@@ -543,16 +600,18 @@ stop_production.bat
 | Check Status | `./status_production.sh` |
 | View Access Log | `tail -f access.log` |
 | View Error Log | `tail -f error.log` |
+| Test Manual | `gunicorn -w 1 -b 127.0.0.1:5000 app:app` |
 
-### Windows Commands
+### Windows Commands (Waitress)
 
 | Action | Command |
 |--------|---------|
 | Start Production | `start_production.bat` |
 | Stop Production | `stop_production.bat` |
 | Check Status | `status_production.bat` |
-| View Access Log | `powershell Get-Content access.log -Wait` |
-| View Error Log | `powershell Get-Content error.log -Wait` |
+| Test Manual | `python waitress_server.py` |
+| Check Port | `netstat -ano \| findstr :5000` |
+| Install Waitress | `pip install waitress==3.0.0` |
 
 ## 📄 License
 
@@ -560,10 +619,11 @@ Project ini dibuat untuk keperluan internal Timbangan.
 
 ## 👥 Support
 
-Untuk pertanyaan atau masalah, hubungi Huda Timbangan.
+Untuk pertanyaan atau masalah, hubungi tim IT Timbangan.
 
 ---
 
 **Version:** 1.0.0  
 **Last Updated:** Februari 2026  
-**Production Ready:** ✅ YES (Linux & Windows)
+**Production Ready:** ✅ YES (Linux & Windows)  
+**Windows WSGI Server:** Waitress 3.0.0

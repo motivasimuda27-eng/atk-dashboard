@@ -14,14 +14,26 @@ if errorlevel 1 (
     echo.
     echo [INFO] Untuk menjalankan server, gunakan: start_production.bat
 ) else (
-    echo [STATUS] Server: RUNNING
+    echo [STATUS] Server: RUNNING (Background Mode)
     echo.
     
     REM Show process info
     echo [INFO] Process Information:
     for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5000 ^| findstr LISTENING') do (
         echo   PID: %%a
-        tasklist /FI "PID eq %%a" /FO TABLE
+        
+        REM Check if it's pythonw (background) or python (console)
+        tasklist /FI "PID eq %%a" | findstr "pythonw.exe" >nul
+        if not errorlevel 1 (
+            echo   Type: pythonw.exe (Background - No Window)
+        ) else (
+            tasklist /FI "PID eq %%a" | findstr "python.exe" >nul
+            if not errorlevel 1 (
+                echo   Type: python.exe (Console Window)
+            )
+        )
+        
+        tasklist /FI "PID eq %%a" /FO TABLE /NH
     )
     echo.
     
@@ -34,23 +46,36 @@ if errorlevel 1 (
     
     REM Show log files
     echo [INFO] Log Files:
-    if exist access.log (
-        for %%F in (access.log) do echo   - access.log: %%~zF bytes
+    if exist production.log (
+        for %%F in (production.log) do echo   - production.log: %%~zF bytes
     )
-    if exist error.log (
-        for %%F in (error.log) do echo   - error.log: %%~zF bytes
-    )
-    if exist gunicorn.log (
-        for %%F in (gunicorn.log) do echo   - gunicorn.log: %%~zF bytes
+    if exist production_error.log (
+        for %%F in (production_error.log) do (
+            set /a size=%%~zF
+            if %%~zF gtr 0 (
+                echo   - production_error.log: %%~zF bytes [HAS ERRORS!]
+            ) else (
+                echo   - production_error.log: %%~zF bytes [No errors]
+            )
+        )
     )
     echo.
     
-    REM Show recent errors
-    if exist error.log (
-        for %%F in (error.log) do set size=%%~zF
+    REM Show last few lines of log
+    if exist production.log (
+        echo [INFO] Last 5 log entries:
+        powershell -Command "Get-Content production.log -Tail 5"
+        echo.
+    )
+    
+    REM Check for recent errors
+    if exist production_error.log (
+        for %%F in (production_error.log) do set size=%%~zF
         if !size! gtr 0 (
-            echo [WARNING] Recent Errors detected in error.log
-            echo Check error.log for details.
+            echo [WARNING] Recent Errors detected!
+            echo [INFO] Last 3 error entries:
+            powershell -Command "Get-Content production_error.log -Tail 3"
+            echo.
         )
     )
 )
