@@ -16,15 +16,13 @@ from waitress import serve
 from app import app
 
 # Setup logging to file
-LOG_FILE = 'production.log'
-ERROR_LOG_FILE = 'production_error.log'
+ERROR_LOG_FILE = 'error.log'
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(LOG_FILE, encoding='utf-8'),
         logging.StreamHandler(sys.stdout)  # Also print to console if visible
     ]
 )
@@ -48,7 +46,6 @@ if __name__ == '__main__':
     logger.info('[INFO] URL Lokal:    http://127.0.0.1:5000')
     logger.info('[INFO] URL Network:  http://0.0.0.0:5000')
     logger.info('[INFO] Threads:      4 threads')
-    logger.info('[INFO] Log File:     %s', LOG_FILE)
     logger.info('[INFO] Error Log:    %s', ERROR_LOG_FILE)
     logger.info('')
     logger.info('[INFO] Server started at: %s', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))

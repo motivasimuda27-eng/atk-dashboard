@@ -542,7 +542,7 @@ def export_monthly_csv():
     
     # Buat CSV
     output = StringIO()
-    writer = csv.writer(output, delimiter=',')
+    writer = csv.writer(output, delimiter=';')
     
     # Header CSV
     writer.writerow(['Tanggal Transaksi', 'MID', 'Nama Item', 'Satuan', 'Lokasi', 'Tipe', 'Jumlah', 'Total Reservasi', 'Total Digunakan'])
